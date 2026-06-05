@@ -1,0 +1,242 @@
+<?php
+/**
+ * Instalador idempotente del Agente DK.
+ * Crea la base de datos dk_daniel, las tablas y siembra configuración inicial.
+ * Es seguro re-ejecutarlo: usa INSERT IGNORE y CREATE TABLE IF NOT EXISTS.
+ */
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/helpers.php';
+
+$log = [];
+$ok  = true;
+
+try {
+    $c = cfg();
+
+    // 1. Crear la base de datos si no existe.
+    db_server()->exec("CREATE DATABASE IF NOT EXISTS `{$c['db_name']}`
+                       CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    $log[] = "Base de datos «{$c['db_name']}» lista.";
+
+    $pdo = db();
+
+    // 2. Tablas.
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS settings (
+        skey   VARCHAR(64) PRIMARY KEY,
+        svalue TEXT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS agent_profile (
+        id                  INT AUTO_INCREMENT PRIMARY KEY,
+        name                VARCHAR(100) DEFAULT 'Daniel Khan',
+        role                VARCHAR(150) DEFAULT 'Director de Desarrollo de Negocios LATAM',
+        company             VARCHAR(100) DEFAULT 'SISTEL',
+        target_market       TEXT,
+        value_proposition   TEXT,
+        communication_style TEXT,
+        objections_playbook TEXT,
+        market_focus        VARCHAR(100) DEFAULT 'México',
+        linkedin_url        VARCHAR(255),
+        signature           TEXT,
+        created_at          DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at          DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS leads (
+        id               INT AUTO_INCREMENT PRIMARY KEY,
+        first_name       VARCHAR(120) NOT NULL DEFAULT '',
+        last_name        VARCHAR(120) NOT NULL DEFAULT '',
+        company          VARCHAR(180),
+        role             VARCHAR(180),
+        industry         VARCHAR(120),
+        company_size     VARCHAR(30),
+        country          VARCHAR(80) DEFAULT 'México',
+        city             VARCHAR(120),
+        email            VARCHAR(180),
+        phone            VARCHAR(40),
+        whatsapp_phone   VARCHAR(40),
+        linkedin_url     VARCHAR(255),
+        stage            VARCHAR(30) DEFAULT 'prospecto',
+        source           VARCHAR(50),
+        score            INT DEFAULT 0,
+        notes            TEXT,
+        next_action      TEXT,
+        next_action_date DATE NULL,
+        assigned_to      VARCHAR(100) DEFAULT 'Daniel Khan',
+        created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at       DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_stage (stage),
+        INDEX idx_country (country),
+        INDEX idx_industry (industry),
+        INDEX idx_next_action_date (next_action_date)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS lead_activities (
+        id        INT AUTO_INCREMENT PRIMARY KEY,
+        lead_id   INT NOT NULL,
+        type      VARCHAR(30),
+        subject   VARCHAR(255),
+        body      TEXT,
+        direction VARCHAR(10) DEFAULT 'out',
+        status    VARCHAR(20) DEFAULT 'sent',
+        sent_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_lead_id (lead_id),
+        INDEX idx_type (type),
+        INDEX idx_sent_at (sent_at),
+        CONSTRAINT fk_act_lead FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS content_pieces (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        type         VARCHAR(30) DEFAULT 'post_linkedin',
+        title        VARCHAR(255),
+        body         LONGTEXT,
+        hook         TEXT,
+        cta          TEXT,
+        lead_id      INT NULL,
+        status       VARCHAR(20) DEFAULT 'borrador',
+        platform     VARCHAR(30) DEFAULT 'linkedin',
+        published_at DATETIME NULL,
+        created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_type (type),
+        INDEX idx_status (status),
+        CONSTRAINT fk_cp_lead FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS agent_tasks (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        type         VARCHAR(50),
+        lead_id      INT NULL,
+        payload      JSON,
+        status       VARCHAR(20) DEFAULT 'pendiente',
+        priority     INT DEFAULT 5,
+        scheduled_at DATETIME NULL,
+        executed_at  DATETIME NULL,
+        result       TEXT NULL,
+        created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_status (status),
+        INDEX idx_scheduled_at (scheduled_at),
+        INDEX idx_lead_id (lead_id),
+        CONSTRAINT fk_task_lead FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS sequences (
+        id              INT AUTO_INCREMENT PRIMARY KEY,
+        name            VARCHAR(150),
+        description     TEXT,
+        target_stage    VARCHAR(30),
+        target_industry VARCHAR(100),
+        steps_json      LONGTEXT,
+        active          TINYINT(1) DEFAULT 1,
+        created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $log[] = "Tablas creadas/verificadas.";
+
+    // 3. Migraciones idempotentes (ALTER TABLE con try/catch).
+    $migrations = [
+        "ALTER TABLE leads ADD COLUMN score INT DEFAULT 0 AFTER stage",
+        "ALTER TABLE content_pieces ADD COLUMN hashtags VARCHAR(500) NULL AFTER cta",
+    ];
+    foreach ($migrations as $m) {
+        try { $pdo->exec($m); } catch (Throwable $e) { /* ya existe — ignorar */ }
+    }
+
+    // 4. Settings por defecto (no pisa valores existentes).
+    $defaults = [
+        'claude_api_key'       => '',
+        'claude_model'         => 'claude-sonnet-4-5',
+        'openai_api_key'       => '',
+        'whapi_token'          => '',
+        'whapi_instance_url'   => 'https://gate.whapi.cloud',
+        'whapi_owner_phone'    => '',
+        'smtp_host'            => '',
+        'smtp_port'            => '587',
+        'smtp_user'            => '',
+        'smtp_pass'            => '',
+        'smtp_from_name'       => 'Daniel Khan · SISTEL',
+        'smtp_from_email'      => '',
+        'linkedin_token'       => '',
+        'linkedin_author_urn'  => '',
+        'agent_auto_mode'      => '0',
+        'agent_daily_limit'    => '20',
+    ];
+    $st = $pdo->prepare("INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)");
+    foreach ($defaults as $k => $v) { $st->execute([$k, $v]); }
+    $log[] = count($defaults) . " settings sembrados.";
+
+    // 5. Perfil del agente (fila única id=1).
+    $pdo->exec("INSERT IGNORE INTO agent_profile (id, name, role, company, target_market, value_proposition, communication_style, objections_playbook, market_focus) VALUES (
+        1,
+        'Daniel Khan',
+        'Director de Desarrollo de Negocios LATAM',
+        'SISTEL',
+        'Directores y Gerentes de Recursos Humanos, Capacitación, Talento y Desarrollo Organizacional en empresas medianas y grandes del sector industrial, manufactura, retail, servicios financieros y tecnología en México. Organizaciones con más de 200 empleados que buscan profesionalizar su función de aprendizaje.',
+        'SISTEL diseña, implementa y opera Universidades Corporativas y ecosistemas de aprendizaje a medida para empresas en LATAM. No somos un proveedor de cursos: somos el socio estratégico que convierte la capacitación en una ventaja competitiva real. Nuestra metodología 6E+IA (Explorar, Estructurar, Ejecutar, Enamorar, Enfocar, Evolucionar) y nuestra plataforma SENSEI permiten medir el impacto del aprendizaje en resultados de negocio.',
+        'Consultivo y directo. Habla en términos de negocio, no de pedagogía. Usa datos y casos cuando puede. Tono cálido pero ejecutivo. Escucha primero, propone después. No vende características: conecta con el problema del cliente.',
+        'Objeción: Ya tenemos un LMS. Respuesta: Un LMS es solo la plataforma; una Universidad Corporativa es el sistema estratégico que la gobierna. ¿Qué resultados de negocio están midiendo hoy con ese LMS? || Objeción: Es muy caro. Respuesta: El costo real es no medir el impacto. ¿Cuánto les cuesta hoy la rotación, los errores operativos o la brecha de habilidades? || Objeción: No es el momento. Respuesta: Entendido. ¿Qué tendría que pasar en su organización para que sea el momento?',
+        'México'
+    )");
+    $log[] = "Perfil del agente sembrado (id=1).";
+
+    // 6. Carpeta uploads.
+    $uploadsDir = __DIR__ . '/uploads';
+    if (!is_dir($uploadsDir)) @mkdir($uploadsDir, 0775, true);
+    $gitIgnore = $uploadsDir . '/.gitignore';
+    if (!file_exists($gitIgnore)) {
+        @file_put_contents($gitIgnore, "*\n!.gitignore\n");
+    }
+
+    $log[] = "Instalación completa.";
+
+} catch (Throwable $e) {
+    $ok    = false;
+    $log[] = "ERROR: " . $e->getMessage();
+}
+?>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instalación · Agente DK</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>body{font-family:system-ui,sans-serif}</style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-6">
+  <div class="max-w-xl w-full bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-8">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="h-10 w-10 rounded-xl bg-indigo-600 text-white grid place-items-center font-bold text-lg">DK</div>
+      <div>
+        <h1 class="text-lg font-semibold text-slate-900">Instalación del Agente DK</h1>
+        <p class="text-sm text-slate-500">Daniel Khan &mdash; SISTEL LATAM</p>
+      </div>
+    </div>
+    <ul class="space-y-2 mb-6">
+      <?php foreach ($log as $line):
+        $isErr = (strncmp($line, 'ERROR', 5) === 0); ?>
+        <li class="text-sm <?= $isErr ? 'text-red-600' : 'text-slate-700' ?> flex gap-2 items-start">
+          <span class="shrink-0 mt-px"><?= $isErr ? '&#x2715;' : '&#x2713;' ?></span>
+          <span><?= e($line) ?></span>
+        </li>
+      <?php endforeach; ?>
+    </ul>
+    <?php if ($ok): ?>
+      <div class="rounded-xl bg-emerald-50 ring-1 ring-emerald-200 p-4 mb-6">
+        <p class="text-sm text-emerald-800 font-medium">Todo listo. Abre la plataforma y configura tu API key de Claude en Ajustes.</p>
+      </div>
+      <div class="flex gap-3">
+        <a href="index.php" class="px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">Abrir plataforma</a>
+        <a href="index.php?page=ajustes" class="px-4 py-2.5 rounded-lg ring-1 ring-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50">Ir a Ajustes</a>
+      </div>
+    <?php else: ?>
+      <div class="rounded-xl bg-red-50 ring-1 ring-red-200 p-4">
+        <p class="text-sm text-red-800">Revisa tus datos en <code>config.php</code> (host, puerto, usuario y contraseña de MySQL en MAMP) y vuelve a cargar esta página.</p>
+      </div>
+    <?php endif; ?>
+  </div>
+</body>
+</html>

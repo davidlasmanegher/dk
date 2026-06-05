@@ -1,0 +1,49 @@
+<?php
+/** Router principal del Agente DK. */
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/helpers.php';
+boot();
+
+ob_start();
+
+// Si la BD no está lista, redirigir al instalador.
+try {
+    db()->query("SELECT 1 FROM settings LIMIT 1");
+} catch (Throwable $e) {
+    header('Location: install.php');
+    exit;
+}
+
+$pages = [
+    'dashboard' => 'Panel',
+    'leads'     => 'Leads',
+    'lead'      => 'Detalle de Lead',
+    'contenido' => 'Contenido',
+    'agente'    => 'Agente Autónomo',
+    'perfil'    => 'Perfil del Agente',
+    'outreach'  => 'Outreach',
+    'ajustes'   => 'Ajustes',
+];
+
+$fullscreen_pages = [];
+
+$active = $_GET['page'] ?? 'dashboard';
+$isFullscreen = in_array($active, $fullscreen_pages, true);
+if (!$isFullscreen && !isset($pages[$active])) $active = 'dashboard';
+$page_title = $pages[$active] ?? ucfirst($active);
+
+$file = __DIR__ . "/pages/{$active}.php";
+if (!file_exists($file)) {
+    $active     = 'dashboard';
+    $file       = __DIR__ . '/pages/dashboard.php';
+    $page_title = 'Panel';
+    $isFullscreen = false;
+}
+
+if ($isFullscreen) {
+    require $file;
+} else {
+    require __DIR__ . '/includes/layout_top.php';
+    require $file;
+    require __DIR__ . '/includes/layout_bottom.php';
+}
