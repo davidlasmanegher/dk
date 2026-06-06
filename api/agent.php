@@ -150,6 +150,32 @@ switch ($action) {
         json_out(['ok' => true]);
     }
 
+    // ── dashboard — métricas ejecutivas del panel ──────────────────────────────
+    case 'dashboard': {
+        $pdo = db();
+        $funnel = $pdo->query("SELECT stage, COUNT(*) c FROM leads GROUP BY stage")->fetchAll(PDO::FETCH_KEY_PAIR);
+        $bySeg  = $pdo->query("SELECT COALESCE(NULLIF(segment,''),'?') s, COUNT(*) c FROM leads GROUP BY segment")->fetchAll(PDO::FETCH_KEY_PAIR);
+        $recent = $pdo->query(
+            "SELECT a.type, a.direction, a.subject, a.body, a.sent_at,
+                    CONCAT(l.first_name, ' ', COALESCE(l.last_name,'')) AS lead_name
+             FROM lead_activities a LEFT JOIN leads l ON l.id = a.lead_id
+             ORDER BY a.sent_at DESC LIMIT 8"
+        )->fetchAll();
+        json_out([
+            'ok'            => true,
+            'total'         => (int)$pdo->query("SELECT COUNT(*) FROM leads")->fetchColumn(),
+            'high'          => (int)$pdo->query("SELECT COUNT(*) FROM leads WHERE score >= 80")->fetchColumn(),
+            'inbox_pending' => (int)$pdo->query("SELECT COUNT(*) FROM inbox_messages WHERE status = 'pendiente'")->fetchColumn(),
+            'suggestions'   => (int)$pdo->query("SELECT COUNT(*) FROM agent_tasks WHERE status = 'sugerida'")->fetchColumn(),
+            'overdue'       => (int)$pdo->query("SELECT COUNT(*) FROM leads WHERE next_action_date IS NOT NULL AND next_action_date <= CURDATE() AND stage NOT IN ('ganado','perdido','pausado')")->fetchColumn(),
+            'content_drafts'=> (int)$pdo->query("SELECT COUNT(*) FROM content_pieces WHERE status = 'borrador'")->fetchColumn(),
+            'activity_week' => (int)$pdo->query("SELECT COUNT(*) FROM lead_activities WHERE direction = 'out' AND sent_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)")->fetchColumn(),
+            'funnel'        => $funnel,
+            'by_segment'    => $bySeg,
+            'recent_activity' => $recent,
+        ]);
+    }
+
     // ── plan — el planificador crea tareas según el estado de los leads ─────────
     case 'plan': {
         $n = agent_plan();
