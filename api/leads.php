@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/claude.php';
+require_once __DIR__ . '/../includes/leads_intel.php';
 boot();
 verify_csrf_token();
 require_once __DIR__ . '/../includes/auth.php';
@@ -31,8 +33,11 @@ switch ($action) {
         if ($stage !== '') { $where[] = 'stage = ?'; $params[] = $stage; }
         if ($industry !== '') { $where[] = 'industry LIKE ?'; $params[] = '%' . $industry . '%'; }
         if ($country !== '') { $where[] = 'country = ?'; $params[] = $country; }
+        $segment = trim((string)($d['segment'] ?? ''));
+        if ($segment !== '') { $where[] = 'segment = ?'; $params[] = $segment; }
 
-        $sql = "SELECT * FROM leads WHERE " . implode(' AND ', $where) . " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        $order = (($d['sort'] ?? 'score') === 'recent') ? 'created_at DESC' : 'score DESC, id DESC';
+        $sql = "SELECT * FROM leads WHERE " . implode(' AND ', $where) . " ORDER BY {$order} LIMIT ? OFFSET ?";
         $params[] = $limit;
         $params[] = $offset;
 
@@ -86,6 +91,8 @@ switch ($action) {
             'next_action'      => trim((string)($d['next_action']     ?? '')),
             'next_action_date' => trim((string)($d['next_action_date'] ?? '')) ?: null,
             'assigned_to'      => trim((string)($d['assigned_to']     ?? 'Daniel Khan')),
+            'region'           => trim((string)($d['region']          ?? '')),
+            'segment'          => trim((string)($d['segment']         ?? '')),
         ];
 
         if ($id) {
@@ -184,6 +191,59 @@ switch ($action) {
             $st->execute($fields);
             json_out(['ok' => true, 'id' => (int)db()->lastInsertId()]);
         }
+    }
+
+    // ── base_report — reporte ejecutivo IA sobre el agregado de la base ─────────
+    case 'base_report': {
+        if (!claude_available()) json_out(['ok' => false, 'error' => 'Configura tu API key de Claude en Ajustes.'], 400);
+        @set_time_limit(0);
+        $stats = leads_base_stats();
+        $system = agent_identity_block()
+            . "\n\nActúa como analista comercial senior de SISTEL México. Recibes la fotografía agregada de la base de prospectos y produces un REPORTE EJECUTIVO en español de México: accionable, directo, sin relleno.";
+        $user = "FOTOGRAFÍA DE LA BASE:\n" . leads_stats_text($stats)
+            . "\n\nEntrega un reporte ejecutivo en markdown con:\n"
+            . "1) Lectura general de la oportunidad.\n"
+            . "2) Dónde concentrar el esfuerzo (segmentos, regiones, empresas) y por qué.\n"
+            . "3) Ángulo de abordaje recomendado por segmento (A, B, C, D, E).\n"
+            . "4) 3 a 5 acciones concretas para las próximas 2 semanas.\n"
+            . "5) Riesgos y cuidados (incluye cumplimiento de datos y cadencia: máx. 5 impactos en 21 días).";
+        $r = claude_call($system, $user, 2600, 0.6);
+        if (!$r['ok']) json_out(['ok' => false, 'error' => $r['error']], 502);
+        json_out(['ok' => true, 'report' => $r['text'], 'stats' => $stats]);
+    }
+
+    // ── analyze_lead — caracterización IA profunda de un lead ──────────────────
+    case 'analyze_lead': {
+        if (!claude_available()) json_out(['ok' => false, 'error' => 'Configura tu API key de Claude en Ajustes.'], 400);
+        @set_time_limit(0);
+        $id = (int)($d['lead_id'] ?? 0);
+        if (!$id) json_out(['ok' => false, 'error' => 'Falta el lead.'], 400);
+        $st = db()->prepare("SELECT * FROM leads WHERE id = ?");
+        $st->execute([$id]);
+        $lead = $st->fetch();
+        if (!$lead) json_out(['ok' => false, 'error' => 'Lead no encontrado.'], 404);
+
+        $leadName = trim(($lead['first_name'] ?? '') . ' ' . ($lead['last_name'] ?? ''));
+        $system = agent_identity_block()
+            . "\n\nActúa como analista comercial. Analiza este prospecto del mercado mexicano para preparar el abordaje. Si tienes acceso a búsqueda web, investiga brevemente la empresa.";
+        $user = "PROSPECTO:\n"
+            . "- Nombre: {$leadName}\n- Empresa: " . ($lead['company'] ?: '—') . "\n- Cargo: " . ($lead['role'] ?: '—') . "\n"
+            . "- Ubicación: " . trim(($lead['city'] ?? '') . ', ' . ($lead['region'] ?? '') . ', ' . ($lead['country'] ?? ''), ', ') . "\n"
+            . "- Segmento: " . lead_segment_label((string)($lead['segment'] ?? '')) . " · Score: " . (int)($lead['score'] ?? 0) . "\n\n"
+            . "Entrega en markdown, breve y accionable:\n"
+            . "1) Sector probable y tamaño estimado de la empresa.\n"
+            . "2) Por qué es (o no) prioritario para SISTEL.\n"
+            . "3) Ángulo de abordaje: qué dolor tocar y con qué academia (comercial, onboarding, liderazgo, técnica).\n"
+            . "4) Objeciones probables de este perfil y cómo gestionarlas.\n"
+            . "5) Un primer mensaje de apertura sugerido (breve, en voz de Daniel).";
+
+        $r = claude_call_web($system, $user, 2200, 4);
+        if (!$r['ok'] && ($r['tool_unavailable'] ?? false)) {
+            $r = claude_call($system, $user, 2200, 0.6);
+            $r['sources'] = [];
+        }
+        if (!$r['ok']) json_out(['ok' => false, 'error' => $r['error']], 502);
+        json_out(['ok' => true, 'analysis' => $r['text'], 'sources' => $r['sources'] ?? [], 'searched' => $r['searched'] ?? false]);
     }
 
     default:

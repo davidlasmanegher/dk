@@ -51,11 +51,23 @@ if (!$leadData) { echo '<div class="text-center py-12 text-slate-500">Lead no en
           LinkedIn
         </a>
       <?php endif; ?>
+      <button onclick="analyzeLead()" id="analyzeBtn" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg ring-1 ring-indigo-300 text-indigo-700 text-xs font-medium hover:bg-indigo-50 transition">
+        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Analizar con IA
+      </button>
       <button onclick="editLead()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition">
         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 16l9-9 3 3-9 9H6v-3z"/></svg>
         Editar
       </button>
     </div>
+  </div>
+
+  <div id="aiPanel" class="hidden bg-white rounded-xl ring-1 ring-indigo-200 p-5">
+    <div class="flex items-center justify-between mb-2">
+      <h3 class="text-sm font-semibold text-indigo-900">Análisis del prospecto (IA)</h3>
+      <button onclick="document.getElementById('aiPanel').classList.add('hidden')" class="text-xs text-slate-400 hover:text-slate-700">Ocultar</button>
+    </div>
+    <div id="aiPanelBody" class="text-sm text-slate-700 leading-relaxed"></div>
   </div>
 
   <div class="grid lg:grid-cols-3 gap-5">
@@ -312,6 +324,27 @@ async function sendMessage() {
 
 function editLead() {
   window.location.href = 'index.php?page=leads';
+}
+
+async function analyzeLead() {
+  var panel = document.getElementById('aiPanel');
+  var body  = document.getElementById('aiPanelBody');
+  panel.classList.remove('hidden');
+  body.innerHTML = '<div class="text-slate-400 py-4">Analizando el prospecto con IA… (puede tardar unos segundos)</div>';
+  var restore = loading(document.getElementById('analyzeBtn'), 'Analizando…');
+  var r = await api('api/leads.php', { action: 'analyze_lead', lead_id: leadId });
+  restore();
+  if (r && r.ok) {
+    var html = mdToHtml(r.analysis);
+    if (r.sources && r.sources.length) {
+      html += '<div class="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">Fuentes: '
+        + r.sources.map(function(s){ return '<a href="' + escapeHtml(s.url) + '" target="_blank" rel="noopener" class="text-indigo-600 hover:underline">' + escapeHtml(s.title || s.url) + '</a>'; }).join(' · ')
+        + '</div>';
+    }
+    body.innerHTML = html;
+  } else {
+    body.innerHTML = '<div class="text-red-600">' + escapeHtml(r.error || 'Error al analizar.') + '</div>';
+  }
 }
 
 loadActivities();
