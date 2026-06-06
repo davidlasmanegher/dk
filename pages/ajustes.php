@@ -181,7 +181,8 @@
 
   <!-- LinkedIn -->
   <div class="bg-white rounded-xl ring-1 ring-slate-200 p-6">
-    <h2 class="text-sm font-semibold text-slate-900 mb-4">LinkedIn</h2>
+    <h2 class="text-sm font-semibold text-slate-900 mb-1">LinkedIn</h2>
+    <p class="text-xs text-slate-500 mb-4">Publicación en la página de SISTEL México vía API oficial. Requiere una LinkedIn App con permiso de organización (<code class="text-slate-600">w_organization_social</code>).</p>
     <div class="space-y-4">
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Access Token</label>
@@ -195,8 +196,15 @@
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Author URN</label>
         <input type="text" id="linkedin_author_urn" value="<?= e(setting('linkedin_author_urn', '')) ?>"
-               placeholder="urn:li:person:XXXX"
+               placeholder="urn:li:organization:XXXX"
                class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+        <p class="text-xs text-slate-400 mt-1.5">Para publicar en la página de SISTEL México: <code class="text-slate-600">urn:li:organization:</code> + el ID numérico de la página. Para tu perfil personal: <code class="text-slate-600">urn:li:person:</code> + tu ID.</p>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Versión de la API (AAAAMM)</label>
+        <input type="text" id="linkedin_version" value="<?= e(setting('linkedin_version', '202506')) ?>"
+               class="w-40 rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+        <p class="text-xs text-slate-400 mt-1.5">Si LinkedIn rechaza por versión, poné la vigente que aparece en tu portal de desarrollador.</p>
       </div>
       <button onclick="saveGroup('linkedin')" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition">
         Guardar
@@ -259,7 +267,7 @@ var groups = {
   whapi:   ['whapi_token', 'whapi_instance_url', 'whapi_owner_phone'],
   smtp:    ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_name', 'smtp_from_email'],
   inbox:   ['imap_host', 'imap_port', 'imap_user', 'imap_pass', 'whapi_webhook_token'],
-  linkedin:['linkedin_token', 'linkedin_author_urn'],
+  linkedin:['linkedin_token', 'linkedin_author_urn', 'linkedin_version'],
   agent:   ['agent_daily_limit'],
 };
 

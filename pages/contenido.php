@@ -130,6 +130,12 @@ $lead_id_param = (int)($_GET['lead_id'] ?? 0);
     <footer class="px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl flex items-center justify-between">
       <button onclick="deletePiece()" class="text-sm text-red-600 hover:underline">Eliminar</button>
       <div class="flex gap-2.5">
+        <button id="vm_publish_li" onclick="publishLinkedIn()"
+                class="hidden inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-sm font-medium transition" style="background:#0a66c2"
+                onmouseover="this.style.background='#004182'" onmouseout="this.style.background='#0a66c2'">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg>
+          Publicar en LinkedIn
+        </button>
         <button onclick="closeViewModal()" class="px-4 py-2 rounded-lg ring-1 ring-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-100">Cancelar</button>
         <button id="vm_save" onclick="savePiece()" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">Guardar</button>
       </div>
@@ -239,6 +245,10 @@ async function openViewModal(id) {
   document.getElementById('vm_title').value    = p.title || '';
   document.getElementById('vm_body').value     = p.body  || '';
   document.getElementById('vm_status').value   = p.status || 'borrador';
+  var publishable = (p.type === 'post_linkedin' || p.type === 'articulo' || p.type === 'newsletter');
+  var liBtn = document.getElementById('vm_publish_li');
+  if (publishable && p.status !== 'publicado') liBtn.classList.remove('hidden');
+  else liBtn.classList.add('hidden');
   document.getElementById('viewModal').classList.remove('hidden');
 }
 function closeViewModal() { document.getElementById('viewModal').classList.add('hidden'); }
@@ -264,6 +274,18 @@ async function deletePiece() {
   var r = await api('api/content.php', { action: 'delete_content', id: parseInt(id) });
   if (r && r.ok) { toast('Eliminado.', 'ok'); closeViewModal(); loadContent(); }
   else toast(r.error || 'Error.', 'error');
+}
+
+async function publishLinkedIn() {
+  var id = parseInt(document.getElementById('vm_id').value);
+  if (!id) return;
+  if (!confirm('¿Publicar esta pieza en la página de LinkedIn de SISTEL México?')) return;
+  var btn = document.getElementById('vm_publish_li');
+  var restore = loading(btn, 'Publicando…');
+  var r = await api('api/content.php', { action: 'publish_linkedin', id: id });
+  restore();
+  if (r && r.ok) { toast('Publicado en LinkedIn.', 'ok'); closeViewModal(); loadContent(); }
+  else toast(r.error || 'No se pudo publicar.', 'error');
 }
 
 document.getElementById('genModal').addEventListener('click', function(e) { if (e.target === this) closeGenModal(); });

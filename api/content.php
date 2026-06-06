@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/claude.php';
+require_once __DIR__ . '/../includes/linkedin.php';
 boot();
 verify_csrf_token();
 require_once __DIR__ . '/../includes/auth.php';
@@ -148,6 +149,29 @@ switch ($action) {
             'cta'   => (string)($parsed['cta']   ?? ''),
             'type'  => $type,
         ]);
+    }
+
+    // ── publish_linkedin — publica una pieza en la página de LinkedIn ───────────
+    case 'publish_linkedin': {
+        $id = (int)($d['id'] ?? 0);
+        if (!$id) json_out(['ok' => false, 'error' => 'ID inválido.'], 400);
+        if (!linkedin_available()) {
+            json_out(['ok' => false, 'error' => 'Configura el Access Token y el Author URN de LinkedIn en Ajustes.'], 400);
+        }
+        $st = db()->prepare("SELECT * FROM content_pieces WHERE id = ?");
+        $st->execute([$id]);
+        $piece = $st->fetch();
+        if (!$piece) json_out(['ok' => false, 'error' => 'Pieza no encontrada.'], 404);
+
+        $text = trim((string)($piece['body'] ?? ''));
+        if ($text === '') json_out(['ok' => false, 'error' => 'La pieza no tiene cuerpo para publicar.'], 400);
+
+        $r = linkedin_publish($text);
+        if (!$r['ok']) json_out(['ok' => false, 'error' => 'LinkedIn rechazó la publicación: ' . $r['error']], 502);
+
+        db()->prepare("UPDATE content_pieces SET status = 'publicado', platform = 'linkedin', updated_at = NOW() WHERE id = ?")
+            ->execute([$id]);
+        json_out(['ok' => true]);
     }
 
     default:
