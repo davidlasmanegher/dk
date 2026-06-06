@@ -55,6 +55,7 @@ switch ($action) {
         $allowed = ['claude_api_key','claude_model','openai_api_key',
                     'whapi_token','whapi_instance_url','whapi_owner_phone',
                     'smtp_host','smtp_port','smtp_user','smtp_pass','smtp_from_name','smtp_from_email',
+                    'imap_host','imap_port','imap_user','imap_pass','whapi_webhook_token','inbox_autoreply',
                     'linkedin_token','linkedin_author_urn',
                     'agent_auto_mode','agent_daily_limit'];
         foreach ($allowed as $key) {

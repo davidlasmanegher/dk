@@ -131,6 +131,54 @@
     </div>
   </div>
 
+  <!-- Bandeja de entrada: correo IMAP + webhook WhatsApp -->
+  <div class="bg-white rounded-xl ring-1 ring-slate-200 p-6">
+    <h2 class="text-sm font-semibold text-slate-900 mb-1">Bandeja de entrada</h2>
+    <p class="text-xs text-slate-500 mb-4">Correo entrante por IMAP y recepción de WhatsApp por webhook.</p>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Host IMAP</label>
+        <input type="text" id="imap_host" value="<?= e(setting('imap_host', '')) ?>"
+               placeholder="outlook.office365.com"
+               class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Puerto IMAP</label>
+        <input type="text" id="imap_port" value="<?= e(setting('imap_port', '993')) ?>"
+               class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Usuario IMAP (correo)</label>
+        <input type="text" id="imap_user" value="<?= e(setting('imap_user', '')) ?>"
+               placeholder="daniel.khan@sistel.co"
+               class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Contraseña IMAP (o app password)</label>
+        <div class="flex gap-2">
+          <input type="password" id="imap_pass" value="<?= e(setting('imap_pass', '')) ?>"
+                 class="flex-1 rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+          <button onclick="toggleVis(this)" data-target="imap_pass"
+                  class="px-3 py-2 rounded-lg ring-1 ring-slate-300 text-xs text-slate-600 hover:bg-slate-50 shrink-0">Mostrar</button>
+        </div>
+      </div>
+    </div>
+    <div class="mt-4">
+      <label class="block text-xs font-medium text-slate-600 mb-1">Token del webhook de WhatsApp</label>
+      <div class="flex gap-2">
+        <input type="text" id="whapi_webhook_token" value="<?= e(setting('whapi_webhook_token', '')) ?>"
+               class="flex-1 rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-indigo-500">
+      </div>
+      <p class="text-xs text-slate-400 mt-1.5">Pegá esta URL en tu cuenta Whapi (Settings → Webhooks):<br>
+        <code class="text-slate-600">https://www.sisteltools.com/dk/api/whapi_webhook.php?token=<span id="webhookTokenEcho"><?= e(setting('whapi_webhook_token', 'TU_TOKEN')) ?></span></code></p>
+    </div>
+    <div class="mt-4">
+      <button onclick="saveGroup('inbox')" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition">
+        Guardar
+      </button>
+    </div>
+  </div>
+
   <!-- LinkedIn -->
   <div class="bg-white rounded-xl ring-1 ring-slate-200 p-6">
     <h2 class="text-sm font-semibold text-slate-900 mb-4">LinkedIn</h2>
@@ -210,6 +258,7 @@ var groups = {
   openai:  ['openai_api_key'],
   whapi:   ['whapi_token', 'whapi_instance_url', 'whapi_owner_phone'],
   smtp:    ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_name', 'smtp_from_email'],
+  inbox:   ['imap_host', 'imap_port', 'imap_user', 'imap_pass', 'whapi_webhook_token'],
   linkedin:['linkedin_token', 'linkedin_author_urn'],
   agent:   ['agent_daily_limit'],
 };
