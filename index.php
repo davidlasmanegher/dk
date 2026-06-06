@@ -22,6 +22,7 @@ $pages = [
     'agente'    => 'Agente Autónomo',
     'perfil'    => 'Perfil del Agente',
     'outreach'  => 'Outreach',
+    'inbox'     => 'Bandeja',
     'ajustes'   => 'Ajustes',
     'usuarios'  => 'Usuarios',
     'login'     => 'Ingresar',

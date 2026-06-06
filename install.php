@@ -143,6 +143,25 @@ try {
         updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    $pdo->exec("CREATE TABLE IF NOT EXISTS inbox_messages (
+        id            INT AUTO_INCREMENT PRIMARY KEY,
+        lead_id       INT NULL,
+        channel       VARCHAR(20) NOT NULL,
+        external_id   VARCHAR(255) NULL,
+        from_addr     VARCHAR(255) NULL,
+        subject       VARCHAR(255) NULL,
+        body          LONGTEXT,
+        reply_draft   LONGTEXT,
+        has_objection TINYINT(1) DEFAULT 0,
+        status        VARCHAR(20) DEFAULT 'pendiente',
+        created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+        replied_at    DATETIME NULL,
+        UNIQUE KEY uq_ext (channel, external_id),
+        INDEX idx_status (status),
+        INDEX idx_lead (lead_id),
+        CONSTRAINT fk_inbox_lead FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
     $log[] = "Tablas creadas/verificadas.";
 
     // 3. Migraciones idempotentes (ALTER TABLE con try/catch).
@@ -177,6 +196,12 @@ try {
         'linkedin_author_urn'  => '',
         'agent_auto_mode'      => '0',
         'agent_daily_limit'    => '20',
+        'imap_host'            => 'outlook.office365.com',
+        'imap_port'            => '993',
+        'imap_user'            => '',
+        'imap_pass'            => '',
+        'whapi_webhook_token'  => '',
+        'inbox_autoreply'      => '0',
     ];
     $st = $pdo->prepare("INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)");
     foreach ($defaults as $k => $v) { $st->execute([$k, $v]); }
