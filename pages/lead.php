@@ -29,9 +29,8 @@ if (!$leadData) { echo '<div class="text-center py-12 text-slate-500">Lead no en
         </p>
         <div class="flex items-center gap-2 mt-1.5">
           <?php
-          $stages = require_once('/dev/null') ?: null;
-          // Inline stage badge
-          $stageBadges = ['prospecto'=>'bg-slate-100 text-slate-600 ring-slate-200','contactado'=>'bg-sky-50 text-sky-700 ring-sky-200','interesado'=>'bg-violet-50 text-violet-700 ring-violet-200','propuesta'=>'bg-amber-50 text-amber-700 ring-amber-200','negociacion'=>'bg-orange-50 text-orange-700 ring-orange-200','ganado'=>'bg-emerald-50 text-emerald-700 ring-emerald-200','perdido'=>'bg-red-50 text-red-600 ring-red-200','pausado'=>'bg-slate-100 text-slate-400 ring-slate-200'];
+          // Badges de etapa inline (equivalente a lead_stages() de helpers.php)
+          $stageBadges =['prospecto'=>'bg-slate-100 text-slate-600 ring-slate-200','contactado'=>'bg-sky-50 text-sky-700 ring-sky-200','interesado'=>'bg-violet-50 text-violet-700 ring-violet-200','propuesta'=>'bg-amber-50 text-amber-700 ring-amber-200','negociacion'=>'bg-orange-50 text-orange-700 ring-orange-200','ganado'=>'bg-emerald-50 text-emerald-700 ring-emerald-200','perdido'=>'bg-red-50 text-red-600 ring-red-200','pausado'=>'bg-slate-100 text-slate-400 ring-slate-200'];
           $stageLabels = ['prospecto'=>'Prospecto','contactado'=>'Contactado','interesado'=>'Interesado','propuesta'=>'Propuesta','negociacion'=>'Negociación','ganado'=>'Ganado','perdido'=>'Perdido','pausado'=>'Pausado'];
           $sb = $stageBadges[$leadData['stage']] ?? 'bg-slate-100 text-slate-600 ring-slate-200';
           $sl = $stageLabels[$leadData['stage']] ?? ucfirst($leadData['stage']);
@@ -96,15 +95,20 @@ if (!$leadData) { echo '<div class="text-center py-12 text-slate-500">Lead no en
           <label class="block text-xs font-medium text-slate-600 mb-1">Cuerpo / Notas</label>
           <textarea id="act_body" rows="4" class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500 resize-none" placeholder="Contenido del mensaje o resumen de la llamada…"></textarea>
         </div>
-        <div class="flex items-center gap-2">
-          <button id="saveActBtn" onclick="saveActivity()" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition">
-            Guardar actividad
-          </button>
+        <div class="flex items-center gap-2 flex-wrap">
           <button onclick="generateMessage()" class="px-4 py-2 rounded-lg ring-1 ring-indigo-300 text-indigo-700 text-sm font-medium hover:bg-indigo-50 transition flex items-center gap-1.5">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             Generar con IA
           </button>
+          <button id="sendActBtn" onclick="sendMessage()" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition flex items-center gap-1.5">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            Enviar ahora
+          </button>
+          <button id="saveActBtn" onclick="saveActivity()" class="px-4 py-2 rounded-lg ring-1 ring-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition">
+            Solo registrar
+          </button>
         </div>
+        <p class="text-xs text-slate-400 mt-2">«Enviar ahora» manda el email o WhatsApp real al prospecto y registra la actividad. Para LinkedIn, llamada o nota, usa «Solo registrar».</p>
       </div>
 
       <!-- Historial -->
@@ -253,21 +257,56 @@ async function saveActivity() {
   }
 }
 
+function currentChannel() {
+  return document.getElementById('act_type').value === 'whatsapp' ? 'whatsapp' : 'email';
+}
+
 async function generateMessage() {
   var btn = event.target.closest('button');
   var restore = loading(btn, 'Generando…');
-  var r = await api('api/content.php', {
+  var r = await api('api/outreach.php', {
     action:  'generate',
-    type:    'mensaje_prospecto',
     lead_id: leadId,
+    channel: currentChannel(),
+    goal:    document.getElementById('act_subject').value.trim(),
   });
   restore();
-  if (r && r.ok && r.body) {
-    document.getElementById('act_body').value    = r.body;
-    document.getElementById('act_subject').value = r.title || 'Mensaje generado con IA';
-    toast('Mensaje generado.', 'ok');
+  if (r && r.ok) {
+    if (r.subject) document.getElementById('act_subject').value = r.subject;
+    document.getElementById('act_body').value = r.body || '';
+    toast('Borrador generado. Revísalo antes de enviar.', 'ok');
   } else {
     toast(r.error || 'Error al generar.', 'error');
+  }
+}
+
+async function sendMessage() {
+  var type = document.getElementById('act_type').value;
+  if (type !== 'email' && type !== 'whatsapp') {
+    toast('«Enviar ahora» solo aplica a Email o WhatsApp. Usa «Solo registrar» para los demás.', 'error');
+    return;
+  }
+  var body = document.getElementById('act_body').value.trim();
+  if (!body) { toast('Escribe o genera el mensaje primero.', 'error'); return; }
+  var canal = (type === 'whatsapp') ? 'WhatsApp' : 'email';
+  if (!confirm('¿Enviar este ' + canal + ' al prospecto ahora? Es una acción real e inmediata.')) return;
+
+  var restore = loading(document.getElementById('sendActBtn'), 'Enviando…');
+  var r = await api('api/outreach.php', {
+    action:  'send',
+    lead_id: leadId,
+    channel: type,
+    subject: document.getElementById('act_subject').value.trim(),
+    body:    document.getElementById('act_body').value.trim(),
+  });
+  restore();
+  if (r && r.ok) {
+    toast('Enviado y registrado.', 'ok');
+    document.getElementById('act_subject').value = '';
+    document.getElementById('act_body').value    = '';
+    loadActivities();
+  } else {
+    toast(r.error || 'Error al enviar.', 'error');
   }
 }
 
