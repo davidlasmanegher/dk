@@ -11,10 +11,12 @@ if (PHP_SAPI !== 'cli') { http_response_code(403); exit("Solo CLI\n"); }
 
 require_once __DIR__ . '/../includes/agent.php';
 
-$planned = agent_plan();
-$res     = agent_run();
+// Modo controlado: procesa solo lo ya programado (pasos de secuencias inscritas,
+// seguimientos vencidos). NO auto-planifica los 1.820 prospectos — para eso está
+// el botón "Ejecutar ahora" en la página del Agente.
+$res = agent_run();
 
 fwrite(STDOUT, sprintf(
-    "[%s] plan=%d sugeridas=%d enviadas=%d fallidas=%d\n",
-    date('c'), $planned, $res['suggested'], $res['sent'], $res['failed']
+    "[%s] procesadas=%d sugeridas=%d enviadas=%d fallidas=%d\n",
+    date('c'), $res['processed'], $res['suggested'], $res['sent'], $res['failed']
 ));
