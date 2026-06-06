@@ -171,6 +171,17 @@ switch ($action) {
         ]);
     }
 
+    // ── sequences — lista de secuencias activas ────────────────────────────────
+    case 'sequences': {
+        json_out(['ok' => true, 'sequences' => agent_sequences()]);
+    }
+
+    // ── enroll — inscribe un lead en una secuencia ─────────────────────────────
+    case 'enroll': {
+        $r = agent_enroll_lead((int)($d['lead_id'] ?? 0), (int)($d['sequence_id'] ?? 0));
+        json_out($r, $r['ok'] ? 200 : 400);
+    }
+
     // ── approve_task — aprueba y envía una sugerencia ──────────────────────────
     case 'approve_task': {
         $r = agent_approve_task((int)($d['id'] ?? 0));

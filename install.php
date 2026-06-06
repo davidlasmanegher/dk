@@ -243,6 +243,20 @@ try {
     )");
     $log[] = "Perfil del agente sembrado (id=1).";
 
+    // Secuencia maestra: cadencia México 5x21 (del análisis de mercado).
+    $cadencia = json_encode([
+        ['day' => 0,  'channel' => 'email',    'goal' => 'Presentación institucional con prueba social; abrir un espacio de conversación.'],
+        ['day' => 4,  'channel' => 'linkedin', 'goal' => 'Conexión en LinkedIn con mensaje breve y profesional.'],
+        ['day' => 7,  'channel' => 'email',    'goal' => 'Compartir una guía ejecutiva o un insight de valor, sin pedir nada a cambio.'],
+        ['day' => 12, 'channel' => 'whatsapp', 'goal' => 'Mensaje breve de seguimiento conectando con un dolor de negocio concreto.'],
+        ['day' => 18, 'channel' => 'email',    'goal' => 'Invitación a una sesión ejecutiva de diagnóstico de 30 minutos.'],
+        ['day' => 21, 'channel' => 'email',    'goal' => 'Cierre elegante dejando la puerta abierta para retomar más adelante.'],
+    ], JSON_UNESCAPED_UNICODE);
+    $stSeq = $pdo->prepare("INSERT IGNORE INTO sequences (id, name, description, target_stage, steps_json, active)
+                            VALUES (1, 'Cadencia México 5x21', 'Secuencia de 6 toques en 21 días (correo, LinkedIn, WhatsApp) para prospección consultiva en México.', 'prospecto', ?, 1)");
+    $stSeq->execute([$cadencia]);
+    $log[] = "Secuencia maestra (cadencia 5x21) sembrada.";
+
     // 6. Carpeta uploads.
     $uploadsDir = __DIR__ . '/uploads';
     if (!is_dir($uploadsDir)) @mkdir($uploadsDir, 0775, true);

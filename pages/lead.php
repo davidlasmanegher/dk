@@ -204,6 +204,18 @@ if (!$leadData) { echo '<div class="text-center py-12 text-slate-500">Lead no en
           Crear mensaje / propuesta
         </a>
       </div>
+
+      <div class="bg-white rounded-xl ring-1 ring-slate-200 p-4">
+        <h3 class="text-sm font-semibold text-slate-900 mb-3">Secuencia de prospección</h3>
+        <select id="seqSelect" class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-indigo-500">
+          <option value="">Cargando…</option>
+        </select>
+        <button onclick="enrollSequence()" id="enrollBtn"
+                class="w-full px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition">
+          Inscribir en secuencia
+        </button>
+        <p class="text-xs text-slate-400 mt-2">El agente prepara cada paso en su día y lo deja en la Bandeja para que lo apruebes.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -347,5 +359,27 @@ async function analyzeLead() {
   }
 }
 
+async function loadSequences() {
+  var sel = document.getElementById('seqSelect');
+  if (!sel) return;
+  var r = await api('api/agent.php', { action: 'sequences' });
+  if (!r || !r.ok || !r.sequences || !r.sequences.length) { sel.innerHTML = '<option value="">Sin secuencias configuradas</option>'; return; }
+  sel.innerHTML = r.sequences.map(function(s) {
+    return '<option value="' + s.id + '">' + escapeHtml(s.name) + ' (' + s.step_count + ' pasos)</option>';
+  }).join('');
+}
+
+async function enrollSequence() {
+  var seqId = document.getElementById('seqSelect').value;
+  if (!seqId) { toast('Elegí una secuencia.', 'error'); return; }
+  if (!confirm('¿Inscribir a este prospecto en la secuencia? Se programarán los pasos en los próximos días.')) return;
+  var restore = loading(document.getElementById('enrollBtn'), 'Inscribiendo…');
+  var r = await api('api/agent.php', { action: 'enroll', lead_id: leadId, sequence_id: parseInt(seqId) });
+  restore();
+  if (r && r.ok) { toast('Inscrito: ' + r.created + ' pasos programados.', 'ok'); }
+  else { toast(r.error || 'No se pudo inscribir.', 'error'); }
+}
+
 loadActivities();
+loadSequences();
 </script>
