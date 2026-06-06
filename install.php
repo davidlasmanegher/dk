@@ -149,6 +149,11 @@ try {
     $migrations = [
         "ALTER TABLE leads ADD COLUMN score INT DEFAULT 0 AFTER stage",
         "ALTER TABLE content_pieces ADD COLUMN hashtags VARCHAR(500) NULL AFTER cta",
+        "ALTER TABLE leads ADD COLUMN region VARCHAR(120) NULL AFTER city",
+        "ALTER TABLE leads ADD COLUMN segment VARCHAR(2) NULL AFTER score",
+        "ALTER TABLE leads ADD COLUMN privacy_consent TINYINT(1) DEFAULT 0 AFTER segment",
+        "ALTER TABLE leads ADD INDEX idx_segment (segment)",
+        "ALTER TABLE leads ADD INDEX idx_score (score)",
     ];
     foreach ($migrations as $m) {
         try { $pdo->exec($m); } catch (Throwable $e) { /* ya existe — ignorar */ }
