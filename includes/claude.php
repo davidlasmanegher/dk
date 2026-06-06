@@ -167,7 +167,15 @@ function claude_call_tools(string $system, array $messages, array $tools, callab
         if (!$r['ok']) return ['ok' => false, 'text' => '', 'steps' => $steps, 'error' => $r['error']];
 
         $data = $r['data'];
-        $messages[] = ['role' => 'assistant', 'content' => $data['content'] ?? []];
+        // Normaliza inputs vacíos de tool_use ({} no debe volverse [] al reenviar).
+        $assistant = $data['content'] ?? [];
+        foreach ($assistant as &$blk) {
+            if (($blk['type'] ?? '') === 'tool_use' && (!isset($blk['input']) || $blk['input'] === [] || $blk['input'] === null)) {
+                $blk['input'] = new stdClass();
+            }
+        }
+        unset($blk);
+        $messages[] = ['role' => 'assistant', 'content' => $assistant];
 
         if (($data['stop_reason'] ?? '') === 'tool_use') {
             $results = [];
