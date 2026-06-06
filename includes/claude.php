@@ -149,6 +149,48 @@ function claude_call_web(string $system, string $userText, int $maxTokens = 4000
             'searched' => $searched, 'error' => '', 'tool_unavailable' => false];
 }
 
+/**
+ * Loop agéntico con herramientas (tool use). Claude decide qué herramientas llamar;
+ * $execute(name, input) las ejecuta y devuelve el resultado (string o array).
+ * @return array{ok:bool, text:string, steps:array, error:string}
+ */
+function claude_call_tools(string $system, array $messages, array $tools, callable $execute, int $maxIter = 6, int $maxTokens = 2000): array {
+    $steps = [];
+    for ($i = 0; $i < $maxIter; $i++) {
+        $r = claude_http([
+            'model'      => claude_model(),
+            'max_tokens' => $maxTokens,
+            'system'     => $system,
+            'messages'   => $messages,
+            'tools'      => $tools,
+        ]);
+        if (!$r['ok']) return ['ok' => false, 'text' => '', 'steps' => $steps, 'error' => $r['error']];
+
+        $data = $r['data'];
+        $messages[] = ['role' => 'assistant', 'content' => $data['content'] ?? []];
+
+        if (($data['stop_reason'] ?? '') === 'tool_use') {
+            $results = [];
+            foreach (($data['content'] ?? []) as $block) {
+                if (($block['type'] ?? '') !== 'tool_use') continue;
+                $name = (string)($block['name'] ?? '');
+                $input = $block['input'] ?? [];
+                $out = $execute($name, is_array($input) ? $input : []);
+                $steps[] = ['tool' => $name, 'input' => $input];
+                $results[] = [
+                    'type' => 'tool_result',
+                    'tool_use_id' => $block['id'] ?? '',
+                    'content' => is_string($out) ? $out : json_encode($out, JSON_UNESCAPED_UNICODE),
+                ];
+            }
+            $messages[] = ['role' => 'user', 'content' => $results];
+            continue;
+        }
+        return ['ok' => true, 'text' => claude_extract_text($data), 'steps' => $steps, 'error' => ''];
+    }
+    return ['ok' => true, 'text' => 'Hice varias cosas pero llegué al límite de pasos. ¿Querés que continúe?', 'steps' => $steps, 'error' => ''];
+}
+
 /** Extrae el primer bloque JSON de una respuesta (tolera fences y texto extra). */
 function extract_json(string $text) {
     $text = trim($text);

@@ -4,6 +4,7 @@ if (!isset($active))     $active     = '';
 if (!isset($page_title)) $page_title = 'Panel';
 
 $nav = [
+    ['chat',      'Daniel',           'M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z'],
     ['dashboard', 'Panel',            'M3 12l9-9 9 9M5 10v10h14V10'],
     ['leads',     'Leads',            'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-4a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-2-3.46'],
     ['contenido', 'Contenido',        'M7 3h7l4 4v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1zM14 3v4h4M9 13h6M9 17h4'],

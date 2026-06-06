@@ -15,6 +15,7 @@ try {
 }
 
 $pages = [
+    'chat'      => 'Daniel',
     'dashboard' => 'Panel',
     'leads'     => 'Leads',
     'lead'      => 'Detalle de Lead',
@@ -31,7 +32,7 @@ $pages = [
 
 $fullscreen_pages = ['login'];
 
-$active = $_GET['page'] ?? 'dashboard';
+$active = $_GET['page'] ?? 'chat';
 $isFullscreen = in_array($active, $fullscreen_pages, true);
 if (!$isFullscreen && !isset($pages[$active])) $active = 'dashboard';
 $page_title = $pages[$active] ?? ucfirst($active);
@@ -44,14 +45,14 @@ if (auth_user_count() === 0) {
 } elseif (!is_logged_in() && $active !== 'login') {
     header('Location: index.php?page=login'); exit;
 } elseif (is_logged_in() && $active === 'login') {
-    header('Location: index.php?page=dashboard'); exit;
+    header('Location: index.php?page=chat'); exit;
 }
 
 $file = __DIR__ . "/pages/{$active}.php";
 if (!file_exists($file)) {
-    $active     = 'dashboard';
-    $file       = __DIR__ . '/pages/dashboard.php';
-    $page_title = 'Panel';
+    $active     = 'chat';
+    $file       = __DIR__ . '/pages/chat.php';
+    $page_title = 'Daniel';
     $isFullscreen = false;
 }
 

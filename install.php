@@ -172,6 +172,15 @@ try {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    $pdo->exec("CREATE TABLE IF NOT EXISTS chat_messages (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        role       VARCHAR(16) NOT NULL,
+        content    LONGTEXT,
+        meta       JSON NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_created (created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
     $pdo->exec("CREATE TABLE IF NOT EXISTS knowledge_chunks (
         id        INT AUTO_INCREMENT PRIMARY KEY,
         doc_id    INT,
