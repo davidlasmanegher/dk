@@ -3,6 +3,8 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
 boot();
 verify_csrf_token();
+require_once __DIR__ . '/../includes/auth.php';
+require_auth_api();
 
 $d = json_in();
 $action = $d['action'] ?? '';

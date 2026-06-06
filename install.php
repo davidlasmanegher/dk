@@ -27,6 +27,15 @@ try {
         svalue TEXT
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    $pdo->exec("CREATE TABLE IF NOT EXISTS users (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        username   VARCHAR(60)  NOT NULL UNIQUE,
+        pass_hash  VARCHAR(255) NOT NULL,
+        name       VARCHAR(120) DEFAULT '',
+        last_login DATETIME NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
     $pdo->exec("CREATE TABLE IF NOT EXISTS agent_profile (
         id                  INT AUTO_INCREMENT PRIMARY KEY,
         name                VARCHAR(100) DEFAULT 'Daniel Khan',

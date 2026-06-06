@@ -103,3 +103,9 @@ window.mdToHtml = function (md) {
   }
   return html;
 };
+
+/* Cerrar sesión. */
+window.dkLogout = async function () {
+  try { await api('api/auth.php', { action: 'logout' }); } catch (e) {}
+  window.location.href = 'index.php?page=login';
+};

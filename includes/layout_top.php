@@ -11,6 +11,7 @@ $nav = [
     ['agente',    'Agente',           'M13 10V3L4 14h7v7l9-11h-7z'],
     ['perfil',    'Perfil',           'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
     ['ajustes',   'Ajustes',          'M10.3 3.3a2 2 0 013.4 0l.4.7a2 2 0 002 .9l.8-.1a2 2 0 012.2 2.2l-.1.8a2 2 0 00.9 2l.7.4a2 2 0 010 3.4l-.7.4a2 2 0 00-.9 2l.1.8a2 2 0 01-2.2 2.2l-.8-.1a2 2 0 00-2 .9l-.4.7a2 2 0 01-3.4 0l-.4-.7a2 2 0 00-2-.9l-.8.1a2 2 0 01-2.2-2.2l.1-.8a2 2 0 00-.9-2l-.7-.4a2 2 0 010-3.4l.7-.4a2 2 0 00.9-2l-.1-.8A2 2 0 016.7 4.8l.8.1a2 2 0 002-.9zM12 15a3 3 0 100-6 3 3 0 000 6z'],
+    ['usuarios',  'Usuarios',         'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4'],
 ];
 
 $key_ok = has_api_key();
@@ -106,6 +107,14 @@ $key_ok = has_api_key();
           <a href="index.php?page=ajustes" class="text-xs font-medium text-amber-700 bg-amber-50 ring-1 ring-amber-200 px-3 py-1 rounded-full hover:bg-amber-100 transition">
             Configura API key
           </a>
+        <?php endif; ?>
+        <?php $cu = function_exists('current_user') ? current_user() : null; if ($cu): ?>
+          <a href="index.php?page=usuarios" class="hidden sm:inline text-xs text-slate-500 hover:text-indigo-600 transition">Hola, <?= e($cu['name'] ?: $cu['username']) ?></a>
+          <button onclick="dkLogout()" title="Cerrar sesión"
+                  class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200 px-2.5 py-1 rounded-lg hover:bg-slate-50 transition">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            Salir
+          </button>
         <?php endif; ?>
       </div>
     </header>
