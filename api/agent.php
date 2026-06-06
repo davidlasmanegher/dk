@@ -1,8 +1,11 @@
 <?php
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/agent.php';
 boot();
 verify_csrf_token();
+require_once __DIR__ . '/../includes/auth.php';
+require_auth_api();
 
 $d      = json_in();
 $action = $d['action'] ?? '';
@@ -144,6 +147,52 @@ switch ($action) {
         );
         $st->execute([$status, $result ?: null, $status, $id]);
         json_out(['ok' => true]);
+    }
+
+    // ── plan — el planificador crea tareas según el estado de los leads ─────────
+    case 'plan': {
+        $n = agent_plan();
+        json_out(['ok' => true, 'created' => $n]);
+    }
+
+    // ── run — planifica y procesa (híbrido: sugiere / ejecuta) ─────────────────
+    case 'run': {
+        @set_time_limit(0);
+        $planned = agent_plan();
+        $res     = agent_run();
+        json_out([
+            'ok'        => true,
+            'planned'   => $planned,
+            'suggested' => $res['suggested'],
+            'sent'      => $res['sent'],
+            'failed'    => $res['failed'],
+            'processed' => $res['processed'],
+        ]);
+    }
+
+    // ── approve_task — aprueba y envía una sugerencia ──────────────────────────
+    case 'approve_task': {
+        $r = agent_approve_task((int)($d['id'] ?? 0));
+        json_out($r, $r['ok'] ? 200 : 400);
+    }
+
+    // ── discard_task — descarta una tarea pendiente o sugerida ─────────────────
+    case 'discard_task': {
+        $r = agent_discard_task((int)($d['id'] ?? 0));
+        json_out($r, $r['ok'] ? 200 : 400);
+    }
+
+    // ── get_task — detalle (incluye el borrador en payload_data) ───────────────
+    case 'get_task': {
+        $id = (int)($d['id'] ?? 0);
+        $st = db()->prepare("SELECT t.*, CONCAT(l.first_name, ' ', COALESCE(l.last_name,'')) AS lead_name,
+                                    l.company AS lead_company
+                             FROM agent_tasks t LEFT JOIN leads l ON l.id = t.lead_id WHERE t.id = ?");
+        $st->execute([$id]);
+        $t = $st->fetch();
+        if (!$t) json_out(['ok' => false, 'error' => 'Tarea no encontrada.'], 404);
+        $t['payload_data'] = json_decode((string)$t['payload'], true);
+        json_out(['ok' => true, 'task' => $t]);
     }
 
     default:
