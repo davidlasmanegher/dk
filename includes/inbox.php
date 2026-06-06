@@ -46,6 +46,8 @@ function inbox_generate_reply(array $lead, string $incoming, string $channel): a
     $system  = agent_identity_block() . "\n\n" . outreach_channel_rules($channel)
         . "\n\nEstás RESPONDIENDO un mensaje entrante de un prospecto. Si trae una objeción, aplica la regla de oro "
         . "(validar, reinterpretar, conectar con valor de negocio, proponer un paso suave sin compromiso). Sé breve, humano y útil.";
+    $kctx = knowledge_context($incoming . ' ' . ($lead['company'] ?? ''), 4);
+    if ($kctx !== '') $system .= "\n\n" . $kctx;
     $leadName = trim(($lead['first_name'] ?? '') . ' ' . ($lead['last_name'] ?? ''));
     $hist = outreach_lead_history((int)$lead['id'], 8);
     $user = "PROSPECTO: {$leadName} · " . ($lead['role'] ?: '—') . " · " . ($lead['company'] ?: '—') . "\n";

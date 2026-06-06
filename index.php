@@ -21,6 +21,7 @@ $pages = [
     'contenido' => 'Contenido',
     'agente'    => 'Agente Autónomo',
     'perfil'    => 'Perfil del Agente',
+    'conocimiento' => 'Conocimiento',
     'outreach'  => 'Outreach',
     'inbox'     => 'Bandeja',
     'ajustes'   => 'Ajustes',

@@ -9,6 +9,7 @@ require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/claude.php';
 require_once __DIR__ . '/whapi.php';
 require_once __DIR__ . '/mailer.php';
+require_once __DIR__ . '/knowledge.php';
 
 /** Canal válido normalizado (email | whatsapp). */
 function outreach_norm_channel(string $c): string {
@@ -32,6 +33,8 @@ function outreach_generate_draft(array $lead, string $channel, string $goal = ''
     }
     $channel  = outreach_norm_channel($channel);
     $system   = agent_identity_block() . "\n\n" . outreach_channel_rules($channel);
+    $kq = trim(($lead['company'] ?? '') . ' ' . ($lead['role'] ?? '') . ' ' . $goal . ' ' . $context);
+    if ($kq !== '') { $kctx = knowledge_context($kq, 4); if ($kctx !== '') $system .= "\n\n" . $kctx; }
     $leadName = trim(($lead['first_name'] ?? '') . ' ' . ($lead['last_name'] ?? ''));
 
     $user  = "Redacta el mensaje para este prospecto.\n\nPROSPECTO:\n";

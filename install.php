@@ -162,6 +162,26 @@ try {
         CONSTRAINT fk_inbox_lead FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    $pdo->exec("CREATE TABLE IF NOT EXISTS knowledge (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        type       VARCHAR(32) DEFAULT 'caso',
+        title      VARCHAR(255),
+        content    LONGTEXT,
+        source     VARCHAR(255),
+        chunks     INT DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS knowledge_chunks (
+        id        INT AUTO_INCREMENT PRIMARY KEY,
+        doc_id    INT,
+        title     VARCHAR(255),
+        content   TEXT,
+        embedding LONGTEXT NULL,
+        INDEX (doc_id),
+        FULLTEXT KEY ft_content (content)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
     $log[] = "Tablas creadas/verificadas.";
 
     // 3. Migraciones idempotentes (ALTER TABLE con try/catch).
@@ -202,6 +222,8 @@ try {
         'imap_pass'            => '',
         'whapi_webhook_token'  => '',
         'inbox_autoreply'      => '0',
+        'embeddings_enabled'   => '1',
+        'embeddings_model'     => 'text-embedding-3-small',
     ];
     $st = $pdo->prepare("INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)");
     foreach ($defaults as $k => $v) { $st->execute([$k, $v]); }
