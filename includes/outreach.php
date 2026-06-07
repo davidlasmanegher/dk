@@ -25,7 +25,8 @@ function outreach_norm_channel(string $c): string {
  */
 function scrub_social_proof(string $text): string {
     if (trim($text) === '') return $text;
-    $wl = array_values(array_filter(array_map('trim', explode(',', (string)setting('social_proof', '')))));
+    $prof = function_exists('agent_profile') ? agent_profile() : [];
+    $wl = array_values(array_filter(array_map('trim', explode(',', (string)($prof['social_proof'] ?? '')))));
     $pattern = '/\b(empresas|compañías|companias|clientes|marcas|organizaciones)\s+como\s+([^.;\n]+)/iu';
     if (empty($wl)) {
         return preg_replace($pattern, '$1 líderes de su industria', $text);
