@@ -66,7 +66,7 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <button onclick="addStepNode()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700">
+        <button onclick="addStepFromButton()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700">
           <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           Agregar paso
         </button>
@@ -92,7 +92,7 @@
 <script>
 var chanLabel = { email:'Email', whatsapp:'WhatsApp', linkedin:'LinkedIn' };
 var chanColor = { email:'bg-sky-50 text-sky-700 ring-sky-200', whatsapp:'bg-emerald-50 text-emerald-700 ring-emerald-200', linkedin:'bg-indigo-50 text-indigo-700 ring-indigo-200' };
-var editor = null, lastNodeId = null, posX = 40, posY = 60;
+var editor = null, lastNodeId = null, posX = 40, posY = 60, selectedNodeId = null;
 
 // ── Lista de rutinas ─────────────────────────────────────────────────────────
 async function loadSequences() {
@@ -132,7 +132,23 @@ function ensureEditor() {
   editor = new Drawflow(document.getElementById('flowCanvas'));
   editor.reroute = true;
   editor.start();
+  editor.on('nodeSelected', function(id) { selectedNodeId = id; });
+  editor.on('nodeUnselected', function() { selectedNodeId = null; });
 }
+
+// Último nodo de la cadena (desde Inicio siguiendo las flechas).
+function findLastChainId() {
+  var dump = editor.export().drawflow.Home.data, startId = null;
+  Object.keys(dump).forEach(function(k) { if (dump[k].name === 'inicio') startId = k; });
+  var cur = startId, guard = 0;
+  while (cur && guard++ < 60) {
+    var conns = (dump[cur].outputs && dump[cur].outputs.output_1) ? dump[cur].outputs.output_1.connections : [];
+    if (!conns || !conns.length) break;
+    cur = conns[0].node;
+  }
+  return cur;
+}
+function addStepFromButton() { addStepNode(0, 'email', '', findLastChainId()); }
 
 function startNodeHtml() {
   return '<div class="seq-card"><div class="seq-head h-start">&#9654; Inicio</div>'
@@ -150,11 +166,12 @@ function stepNodeHtml() {
 function addStartNode(x, y) {
   return editor.addNode('inicio', 0, 1, x, y, 'nodeStart', {}, startNodeHtml());
 }
-function addStepNode(day, channel, goal) {
+function addStepNode(day, channel, goal, connectTo) {
   var id = editor.addNode('paso', 1, 1, posX, posY, 'nodeStep',
                           { day: (day || 0), channel: (channel || 'email'), goal: (goal || '') }, stepNodeHtml());
-  if (lastNodeId !== null) {
-    try { editor.addConnection(lastNodeId, id, 'output_1', 'input_1'); } catch (e) {}
+  var from = (connectTo === undefined || connectTo === null) ? lastNodeId : connectTo;
+  if (from !== null && from !== undefined) {
+    try { editor.addConnection(from, id, 'output_1', 'input_1'); } catch (e) {}
   }
   lastNodeId = id;
   posX += 260;
@@ -163,8 +180,12 @@ function addStepNode(day, channel, goal) {
 }
 
 function removeSelected() {
-  if (editor && editor.node_selected) { editor.removeNodeId('node-' + editor.node_selected.id); }
-  else { toast('Tocá una tarjeta de paso para seleccionarla y luego quitarla.', 'error'); }
+  if (!selectedNodeId) { toast('Tocá una tarjeta de paso para seleccionarla (queda con borde índigo) y luego quitala.', 'error'); return; }
+  var node = editor.getNodeFromId(selectedNodeId);
+  if (node && node.name === 'inicio') { toast('El nodo Inicio no se puede quitar.', 'error'); return; }
+  editor.removeNodeId('node-' + selectedNodeId);
+  selectedNodeId = null;
+  toast('Paso quitado.', 'ok');
 }
 
 async function openSeqModal(id) {
