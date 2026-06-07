@@ -60,7 +60,7 @@ function inbox_generate_reply(array $lead, string $incoming, string $channel): a
     $p = extract_json($r['text']);
     $body = is_array($p) ? (string)($p['body'] ?? '') : trim($r['text']);
     $subj = is_array($p) ? (string)($p['subject'] ?? '') : '';
-    return ['ok' => true, 'reply' => $body, 'subject' => $subj, 'error' => ''];
+    return ['ok' => true, 'reply' => scrub_social_proof($body), 'subject' => scrub_social_proof($subj), 'error' => ''];
 }
 
 /**

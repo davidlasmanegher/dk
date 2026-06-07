@@ -17,6 +17,38 @@ function outreach_norm_channel(string $c): string {
     return in_array($c, ['email', 'whatsapp'], true) ? $c : 'email';
 }
 
+/**
+ * Guardrail de prueba social (por código, no por prompt): si el texto enumera
+ * "empresas/clientes como X, Y, Z" y alguno NO está en la lista aprobada (setting
+ * social_proof), reemplaza la enumeración por los aprobados. Evita que el modelo
+ * invente clientes (J&J, Pfizer, etc.) pese a las reglas del system prompt.
+ */
+function scrub_social_proof(string $text): string {
+    if (trim($text) === '') return $text;
+    $wl = array_values(array_filter(array_map('trim', explode(',', (string)setting('social_proof', '')))));
+    $pattern = '/\b(empresas|compañías|companias|clientes|marcas|organizaciones)\s+como\s+([^.;\n]+)/iu';
+    if (empty($wl)) {
+        return preg_replace($pattern, '$1 líderes de su industria', $text);
+    }
+    $wlLower = array_map(function ($w) { return mb_strtolower($w); }, $wl);
+    return preg_replace_callback($pattern, function ($m) use ($wl, $wlLower) {
+        $parts = preg_split('/\s*,\s*|\s+y\s+|\s*&\s*/u', trim($m[2])) ?: [];
+        $unapproved = false;
+        foreach ($parts as $p) {
+            $p = trim($p); if ($p === '') continue;
+            $ok = false;
+            foreach ($wlLower as $w) {
+                if ($w !== '' && (mb_stripos($p, $w) !== false || mb_stripos($w, mb_strtolower($p)) !== false)) { $ok = true; break; }
+            }
+            if (!$ok) { $unapproved = true; break; }
+        }
+        if (!$unapproved) return $m[0];
+        $use = array_slice($wl, 0, 3);
+        $joined = count($use) > 1 ? implode(', ', array_slice($use, 0, -1)) . ' y ' . end($use) : ($use[0] ?? '');
+        return $m[1] . ' como ' . $joined;
+    }, $text);
+}
+
 /** Carga un lead por id. */
 function outreach_get_lead(int $id): ?array {
     $st = db()->prepare("SELECT * FROM leads WHERE id = ?");
@@ -59,7 +91,10 @@ function outreach_generate_draft(array $lead, string $channel, string $goal = ''
 
     $parsed = extract_json($r['text']);
     if (!is_array($parsed)) $parsed = ['subject' => '', 'body' => trim($r['text'])];
-    return ['ok' => true, 'subject' => (string)($parsed['subject'] ?? ''), 'body' => (string)($parsed['body'] ?? ''), 'error' => ''];
+    return ['ok' => true,
+            'subject' => scrub_social_proof((string)($parsed['subject'] ?? '')),
+            'body'    => scrub_social_proof((string)($parsed['body'] ?? '')),
+            'error'   => ''];
 }
 
 /**
