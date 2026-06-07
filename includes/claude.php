@@ -253,7 +253,12 @@ function agent_identity_block(): string {
     if ($vp)     $b .= "\nPROPUESTA DE VALOR:\n{$vp}\n";
     if ($cs)     $b .= "\nESTILO DE COMUNICACIÓN (imítalo con fidelidad):\n{$cs}\n";
     if ($op)     $b .= "\nMANEJO DE OBJECIONES (úsalo como referencia cuando aplique):\n{$op}\n";
-    if ($sp)     $b .= "\nPRUEBA SOCIAL — clientes/marcas que SÍ podés mencionar como referencia de {$company}: {$sp}.\n";
+    if ($sp)     $b .= "\n*** PRUEBA SOCIAL — REGLA CRÍTICA ***\n"
+                     . "Los ÚNICOS clientes y referencias que {$company} tiene y que podés nombrar son EXACTAMENTE estos: {$sp}.\n"
+                     . "ESTÁ TERMINANTEMENTE PROHIBIDO presentar como cliente, caso o referencia a CUALQUIER otra empresa "
+                     . "(por ejemplo Johnson & Johnson, Pfizer, Novartis, Roche, Merck, AstraZeneca, Bayer u otras): NO son clientes de {$company}. "
+                     . "Si das un ejemplo de cliente, usá SOLO los de la lista de arriba. Podés dirigirte por su nombre a la empresa del prospecto, "
+                     . "pero NUNCA la presentes a ella ni a terceros como clientes nuestros. Inventar un cliente es un error grave e inaceptable.\n";
     $b .= "\nReglas: escribe en nombre de {$name}, en primera persona. Tono consultivo, directo y ";
     $b .= "orientado a resultados de negocio. Nunca vendas características: conecta con el problema del cliente. ";
     $b .= "Usa español natural de {$market}. No inventes datos, cifras ni casos que no se te hayan dado. ";
