@@ -192,6 +192,15 @@ function agent_approve_task(int $id): array {
     if (!$sent['ok']) return ['ok' => false, 'error' => $sent['error']];
 
     agent_mark($id, 'completada', 'Aprobado y enviado por ' . $sent['channel']);
+
+    // Si la sugerencia viene de una campaña, marca al lead como contactado.
+    if (!empty($p['campaign_id'])) {
+        db()->prepare("UPDATE campaign_leads SET status = 'contactado' WHERE task_id = ?")->execute([$id]);
+    }
+    // Si trae una cadencia para inscribir tras el primer contacto aprobado, hazlo.
+    if (!empty($p['enroll_sequence_id'])) {
+        agent_enroll_lead((int)$t['lead_id'], (int)$p['enroll_sequence_id']);
+    }
     return ['ok' => true];
 }
 

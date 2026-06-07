@@ -8,6 +8,7 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/agent.php';        // trae outreach, knowledge, claude, whapi, mailer
 require_once __DIR__ . '/../includes/leads_intel.php';
+require_once __DIR__ . '/../includes/campaigns.php';     // campañas de prospección
 require_once __DIR__ . '/../includes/auth.php';
 boot();
 verify_csrf_token();
@@ -52,6 +53,19 @@ function chat_tools(): array {
             'lead_id'     => ['type' => 'integer'],
             'sequence_id' => ['type' => 'integer', 'description' => 'opcional; default 1'],
          ], 'required' => ['lead_id']]],
+        ['name' => 'estado_campanas', 'description' => 'Estado de las campañas de prospección: foco, cupo diario, leads en pool, tocados, contactados y pendientes de aprobar.',
+         'input_schema' => ['type' => 'object', 'properties' => new stdClass()]],
+        ['name' => 'crear_campana', 'description' => 'Crea una campaña de prospección con foco (sector, segmentos, región), objetivo y cupo diario. Queda activa: cada día selecciona los mejores leads del foco y prepara el primer contacto para aprobar.',
+         'input_schema' => ['type' => 'object', 'properties' => [
+            'nombre'      => ['type' => 'string'],
+            'sector'      => ['type' => 'string', 'description' => 'foco sectorial, ej: farma, manufactura, financiero'],
+            'segmentos'   => ['type' => 'string', 'description' => 'opcional, CSV de segmentos A-E (ej "A,D"); vacío = todos'],
+            'region'      => ['type' => 'string', 'description' => 'opcional, ej: México, CDMX, Monterrey'],
+            'objetivo'    => ['type' => 'string', 'description' => 'qué se busca lograr con el primer contacto'],
+            'cupo_diario' => ['type' => 'integer', 'description' => 'contactos por día, default 10'],
+         ], 'required' => ['nombre', 'sector']]],
+        ['name' => 'correr_campana', 'description' => 'Ejecuta ahora una campaña por su id: selecciona los leads del día y prepara los borradores de primer contacto para aprobar en la Bandeja del Agente.',
+         'input_schema' => ['type' => 'object', 'properties' => ['campaign_id' => ['type' => 'integer']], 'required' => ['campaign_id']]],
     ];
 }
 
@@ -116,13 +130,40 @@ function chat_execute(string $name, array $in) {
         case 'inscribir_secuencia': {
             return agent_enroll_lead((int)($in['lead_id'] ?? 0), (int)($in['sequence_id'] ?? 1));
         }
+        case 'estado_campanas': {
+            $rep = campaign_report();
+            return $rep ? ['campanas' => $rep] : ['mensaje' => 'No hay campañas creadas todavía.'];
+        }
+        case 'crear_campana': {
+            $id = campaign_save([
+                'name'        => (string)($in['nombre'] ?? ''),
+                'sector'      => (string)($in['sector'] ?? ''),
+                'segments'    => (string)($in['segmentos'] ?? ''),
+                'region'      => (string)($in['region'] ?? ''),
+                'objective'   => (string)($in['objetivo'] ?? ''),
+                'daily_quota' => max(1, (int)($in['cupo_diario'] ?? 10)),
+                'sequence_id' => 1,
+                'channel'     => 'auto',
+                'status'      => 'activa',
+            ]);
+            $c = campaign_get($id);
+            return ['ok' => true, 'campaign_id' => $id, 'pool' => $c ? campaign_pool_count($c) : 0,
+                    'mensaje' => 'Campaña creada y activa. Decime "corré la campaña ' . $id . '" para que prepare los primeros contactos, o esperá al barrido diario.'];
+        }
+        case 'correr_campana': {
+            $c = campaign_get((int)($in['campaign_id'] ?? 0));
+            if (!$c) return ['error' => 'Campaña no encontrada.'];
+            $r = campaign_run($c);
+            return ['ok' => true, 'preparados' => $r['prepared'], 'fallidos' => $r['failed'],
+                    'mensaje' => $r['prepared'] . ' borradores de primer contacto listos para aprobar en la Bandeja del Agente.'];
+        }
     }
     return ['error' => 'Herramienta desconocida: ' . $name];
 }
 
 function chat_system(): string {
     return agent_identity_block()
-        . "\n\nEstás en un chat de trabajo con tu equipo (tu líder comercial). Pueden pedirte que consultes leads, el pipeline o los casos de SISTEL, que redactes contenido o mensajes, o que inscribas leads en secuencias. Usá las herramientas disponibles cuando te pidan hacer algo concreto.\n"
+        . "\n\nEstás en un chat de trabajo con tu equipo (tu líder comercial). Pueden pedirte que consultes leads, el pipeline o los casos de SISTEL, que redactes contenido o mensajes, que inscribas leads en secuencias, o que gestiones campañas de prospección por sector (crearlas, correrlas, reportar cómo van). Usá las herramientas disponibles cuando te pidan hacer algo concreto.\n"
         . "REGLA: nunca envías nada a un cliente directamente. Cuando redactás un mensaje, lo GUARDÁS como borrador para que el equipo lo revise y envíe.\n"
         . "Después de usar herramientas, contá en lenguaje natural, breve y de colega, QUÉ hiciste y proponé el siguiente paso. Si te piden algo que no podés hacer aún, decilo con franqueza.";
 }

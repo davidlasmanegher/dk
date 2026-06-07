@@ -191,6 +191,38 @@ try {
         FULLTEXT KEY ft_content (content)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    $pdo->exec("CREATE TABLE IF NOT EXISTS campaigns (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        name        VARCHAR(160) NOT NULL,
+        sector      VARCHAR(120) DEFAULT '',
+        segments    VARCHAR(40)  DEFAULT '',
+        region      VARCHAR(120) DEFAULT '',
+        objective   TEXT,
+        daily_quota INT DEFAULT 10,
+        channel     VARCHAR(20) DEFAULT 'auto',
+        sequence_id INT NULL,
+        status      VARCHAR(20) DEFAULT 'activa',
+        notes       TEXT,
+        last_run_at DATETIME NULL,
+        created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_status (status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS campaign_leads (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        campaign_id INT NOT NULL,
+        lead_id     INT NOT NULL,
+        status      VARCHAR(20) DEFAULT 'seleccionado',
+        task_id     INT NULL,
+        enrolled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_campaign_lead (campaign_id, lead_id),
+        INDEX idx_campaign (campaign_id),
+        INDEX idx_lead (lead_id),
+        CONSTRAINT fk_cl_campaign FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+        CONSTRAINT fk_cl_lead FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
     $log[] = "Tablas creadas/verificadas.";
 
     // 3. Migraciones idempotentes (ALTER TABLE con try/catch).
