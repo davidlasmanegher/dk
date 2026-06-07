@@ -1,6 +1,8 @@
 <?php
 /** Piezas de contenido para LinkedIn y outreach */
+require_once __DIR__ . '/../includes/linkedin.php';
 $lead_id_param = (int)($_GET['lead_id'] ?? 0);
+$li_ready = function_exists('linkedin_available') ? linkedin_available() : false;
 ?>
 <div class="space-y-5">
 
@@ -136,6 +138,12 @@ $lead_id_param = (int)($_GET['lead_id'] ?? 0);
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg>
           Publicar en LinkedIn
         </button>
+        <button id="vm_assist_li" onclick="copyOpenLinkedIn()"
+                class="hidden inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-sm font-medium transition" style="background:#0a66c2"
+                onmouseover="this.style.background='#004182'" onmouseout="this.style.background='#0a66c2'">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg>
+          Copiar y abrir LinkedIn
+        </button>
         <button onclick="closeViewModal()" class="px-4 py-2 rounded-lg ring-1 ring-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-100">Cancelar</button>
         <button id="vm_save" onclick="savePiece()" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">Guardar</button>
       </div>
@@ -145,6 +153,7 @@ $lead_id_param = (int)($_GET['lead_id'] ?? 0);
 
 <script>
 var generatedData = null;
+var LI_READY = <?= $li_ready ? 'true' : 'false' ?>;
 
 // Cargar leads en select
 (async function() {
@@ -246,9 +255,12 @@ async function openViewModal(id) {
   document.getElementById('vm_body').value     = p.body  || '';
   document.getElementById('vm_status').value   = p.status || 'borrador';
   var publishable = (p.type === 'post_linkedin' || p.type === 'articulo' || p.type === 'newsletter');
-  var liBtn = document.getElementById('vm_publish_li');
-  if (publishable && p.status !== 'publicado') liBtn.classList.remove('hidden');
-  else liBtn.classList.add('hidden');
+  var pubBtn = document.getElementById('vm_publish_li');
+  var asiBtn = document.getElementById('vm_assist_li');
+  pubBtn.classList.add('hidden'); asiBtn.classList.add('hidden');
+  if (publishable && p.status !== 'publicado') {
+    if (LI_READY) pubBtn.classList.remove('hidden'); else asiBtn.classList.remove('hidden');
+  }
   document.getElementById('viewModal').classList.remove('hidden');
 }
 function closeViewModal() { document.getElementById('viewModal').classList.add('hidden'); }
@@ -286,6 +298,18 @@ async function publishLinkedIn() {
   restore();
   if (r && r.ok) { toast('Publicado en LinkedIn.', 'ok'); closeViewModal(); loadContent(); }
   else toast(r.error || 'No se pudo publicar.', 'error');
+}
+
+function copyOpenLinkedIn() {
+  var body = document.getElementById('vm_body').value || '';
+  if (!body.trim()) { toast('La pieza no tiene texto.', 'error'); return; }
+  function abrir() { window.open('https://www.linkedin.com/company/sistel-m%C3%A9xico/', '_blank'); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(body).then(
+      function() { toast('Texto copiado. Pegalo en LinkedIn y publicá como Sistel México.', 'ok'); abrir(); },
+      function() { toast('Copialo a mano (Cmd+C) desde el cuadro de texto.', 'error'); abrir(); }
+    );
+  } else { toast('Copialo a mano desde el cuadro de texto.', 'error'); abrir(); }
 }
 
 document.getElementById('genModal').addEventListener('click', function(e) { if (e.target === this) closeGenModal(); });
