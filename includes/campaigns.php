@@ -101,18 +101,36 @@ function campaign_pool_count(array $c): int {
     return (int)$st->fetchColumn();
 }
 
-/** Selecciona los N mejores candidatos del foco aún no inscritos (por score). */
+/**
+ * Selecciona los N mejores candidatos del foco aún no inscritos (por score),
+ * limitando a un máximo por empresa (setting campaign_max_per_company, default 2)
+ * para no saturar a varias personas de la misma cuenta el mismo día.
+ */
 function campaign_select_candidates(array $c, int $limit): array {
+    $maxPer = max(1, (int)(setting('campaign_max_per_company', '2') ?: 2));
     [$where, $params] = campaign_match_where($c);
+    // Trae un pool amplio y filtra por empresa en PHP.
     $sql = "SELECT l.* FROM leads l
             WHERE {$where}
               AND NOT EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl.campaign_id = ? AND cl.lead_id = l.id)
             ORDER BY l.score DESC, l.id ASC
-            LIMIT " . (int)$limit;
+            LIMIT " . (int)($limit * 10);
     $params[] = (int)($c['id'] ?? 0);
     $st = db()->prepare($sql);
     $st->execute($params);
-    return $st->fetchAll();
+    $pool = $st->fetchAll();
+
+    $byCompany = []; $out = [];
+    foreach ($pool as $l) {
+        $co = mb_strtoupper(trim((string)($l['company'] ?? '')));
+        if ($co !== '') {
+            if (($byCompany[$co] ?? 0) >= $maxPer) continue;
+            $byCompany[$co] = ($byCompany[$co] ?? 0) + 1;
+        }
+        $out[] = $l;
+        if (count($out) >= $limit) break;
+    }
+    return $out;
 }
 
 /**

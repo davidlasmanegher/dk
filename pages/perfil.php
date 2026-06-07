@@ -76,6 +76,13 @@ if (!$profile) $profile = [];
       </div>
 
       <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Clientes para prueba social</label>
+        <p class="text-xs text-slate-400 mb-1.5">Las ÚNICAS marcas que Daniel puede nombrar como clientes de SISTEL. No inventará otras. Separá por comas.</p>
+        <textarea name="social_proof" rows="2"
+                  class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500 resize-none"><?= e($profile['social_proof'] ?? '') ?></textarea>
+      </div>
+
+      <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Firma para emails</label>
         <textarea name="signature" rows="3"
                   class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500 resize-none font-mono text-xs"

@@ -22,20 +22,22 @@ switch ($action) {
             'value_proposition'   => trim((string)($d['value_proposition']   ?? '')),
             'communication_style' => trim((string)($d['communication_style'] ?? '')),
             'objections_playbook' => trim((string)($d['objections_playbook'] ?? '')),
+            'social_proof'        => trim((string)($d['social_proof']        ?? '')),
             'market_focus'        => trim((string)($d['market_focus']        ?? 'México')),
             'linkedin_url'        => trim((string)($d['linkedin_url']        ?? '')),
             'signature'           => trim((string)($d['signature']           ?? '')),
         ];
         $st = db()->prepare(
             "INSERT INTO agent_profile (id, name, role, company, target_market, value_proposition,
-             communication_style, objections_playbook, market_focus, linkedin_url, signature)
+             communication_style, objections_playbook, social_proof, market_focus, linkedin_url, signature)
              VALUES (1, :name, :role, :company, :target_market, :value_proposition,
-             :communication_style, :objections_playbook, :market_focus, :linkedin_url, :signature)
+             :communication_style, :objections_playbook, :social_proof, :market_focus, :linkedin_url, :signature)
              ON DUPLICATE KEY UPDATE
                name = VALUES(name), role = VALUES(role), company = VALUES(company),
                target_market = VALUES(target_market), value_proposition = VALUES(value_proposition),
                communication_style = VALUES(communication_style),
                objections_playbook = VALUES(objections_playbook),
+               social_proof = VALUES(social_proof),
                market_focus = VALUES(market_focus), linkedin_url = VALUES(linkedin_url),
                signature = VALUES(signature), updated_at = NOW()"
         );

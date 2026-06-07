@@ -234,6 +234,7 @@ try {
         "ALTER TABLE leads ADD COLUMN privacy_consent TINYINT(1) DEFAULT 0 AFTER segment",
         "ALTER TABLE leads ADD INDEX idx_segment (segment)",
         "ALTER TABLE leads ADD INDEX idx_score (score)",
+        "ALTER TABLE agent_profile ADD COLUMN social_proof TEXT NULL AFTER objections_playbook",
     ];
     foreach ($migrations as $m) {
         try { $pdo->exec($m); } catch (Throwable $e) { /* ya existe — ignorar */ }
@@ -265,6 +266,7 @@ try {
         'inbox_autoreply'      => '0',
         'embeddings_enabled'   => '1',
         'embeddings_model'     => 'text-embedding-3-small',
+        'campaign_max_per_company' => '2',
     ];
     $st = $pdo->prepare("INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)");
     foreach ($defaults as $k => $v) { $st->execute([$k, $v]); }
@@ -283,6 +285,10 @@ try {
         'México'
     )");
     $log[] = "Perfil del agente sembrado (id=1).";
+
+    // Prueba social: clientes aprobados (no pisa si el usuario ya cargó su propia lista).
+    $pdo->prepare("UPDATE agent_profile SET social_proof = ? WHERE id = 1 AND (social_proof IS NULL OR social_proof = '')")
+        ->execute(['Sanofi, Carvajal, Juan Valdez, Unilever']);
 
     // Secuencia maestra: cadencia México 5x21 (del análisis de mercado).
     $cadencia = json_encode([

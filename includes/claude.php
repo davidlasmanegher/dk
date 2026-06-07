@@ -245,6 +245,7 @@ function agent_identity_block(): string {
     $vp      = trim((string)($p['value_proposition']   ?? ''));
     $cs      = trim((string)($p['communication_style'] ?? ''));
     $op      = trim((string)($p['objections_playbook'] ?? ''));
+    $sp      = trim((string)($p['social_proof'] ?? ''));
 
     $b  = "Eres el asistente digital de {$name}, {$role} en {$company}.\n";
     $b .= "Mercado foco: {$market}.\n";
@@ -252,8 +253,10 @@ function agent_identity_block(): string {
     if ($vp)     $b .= "\nPROPUESTA DE VALOR:\n{$vp}\n";
     if ($cs)     $b .= "\nESTILO DE COMUNICACIÓN (imítalo con fidelidad):\n{$cs}\n";
     if ($op)     $b .= "\nMANEJO DE OBJECIONES (úsalo como referencia cuando aplique):\n{$op}\n";
+    if ($sp)     $b .= "\nPRUEBA SOCIAL — clientes/marcas que SÍ podés mencionar como referencia de {$company}: {$sp}.\n";
     $b .= "\nReglas: escribe en nombre de {$name}, en primera persona. Tono consultivo, directo y ";
     $b .= "orientado a resultados de negocio. Nunca vendas características: conecta con el problema del cliente. ";
-    $b .= "Usa español natural de {$market}. No inventes datos, cifras ni casos que no se te hayan dado.";
+    $b .= "Usa español natural de {$market}. No inventes datos, cifras ni casos que no se te hayan dado. ";
+    $b .= "NUNCA menciones como cliente de {$company} a ninguna empresa que no esté en la lista de PRUEBA SOCIAL; si no se te dio esa lista, no menciones clientes específicos por nombre.";
     return $b;
 }
