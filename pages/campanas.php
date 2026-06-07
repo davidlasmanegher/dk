@@ -267,6 +267,7 @@ async function classifySectors() {
   while (guard++ < 300) {
     var r = await api('api/campaigns.php', { action: 'classify' });
     if (!r || !r.ok) { toast((r && r.error) || 'Error al clasificar.', 'error'); break; }
+    if (r.aborted) { toast('Se detuvo: ' + r.aborted, 'error'); break; }
     var done = total - r.remaining;
     btn.textContent = 'Clasificando… ' + done + '/' + total;
     if (r.remaining <= 0) { toast('Base clasificada. Ya podés crear campañas por sector.', 'ok'); break; }

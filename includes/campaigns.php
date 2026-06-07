@@ -219,6 +219,7 @@ function campaign_classify_sectors(int $batchSize = 40, int $maxBatches = 0): ar
     $vocab   = campaign_sectors_vocab();
 
     $fail = 0;
+    $aborted = '';
     while ($maxBatches === 0 || $batches < $maxBatches) {
         $rows = $pdo->query("SELECT id, company FROM leads
                              WHERE (industry IS NULL OR industry = '')
@@ -236,11 +237,16 @@ function campaign_classify_sectors(int $batchSize = 40, int $maxBatches = 0): ar
         $user = "Clasificá estas empresas (formato 'id: nombre'):\n\n{$list}\n\n"
               . "Respondé SOLO el JSON: {\"<id>\": \"<sector>\", ...}";
 
-        $r   = claude_call($system, $user, 1800, 0);
+        $r = claude_call($system, $user, 1800, 0);
         $batches++;
+        // Sin créditos o credencial inválida: abortar SIN ensuciar la base (no marcar 'otro').
+        if (!$r['ok'] && preg_match('/credit|balance|billing|insufficient|invalid x-api-key|authentication|api key/i', $r['error'])) {
+            $aborted = $r['error'];
+            break;
+        }
         $map = $r['ok'] ? extract_json($r['text']) : null;
 
-        // Tolerancia a fallos: reintenta una vez; si insiste, marca el lote como 'otro' y avanza.
+        // Tolerancia a fallos transitorios: reintenta una vez; si insiste, marca 'otro' y avanza.
         if (!is_array($map)) {
             $fail++;
             if ($fail >= 2) {
@@ -266,5 +272,5 @@ function campaign_classify_sectors(int $batchSize = 40, int $maxBatches = 0): ar
     $remaining = (int)$pdo->query("SELECT COUNT(*) FROM leads
                                    WHERE (industry IS NULL OR industry = '')
                                      AND company IS NOT NULL AND company <> ''")->fetchColumn();
-    return ['updated' => $updated, 'batches' => $batches, 'remaining' => $remaining];
+    return ['updated' => $updated, 'batches' => $batches, 'remaining' => $remaining, 'aborted' => $aborted];
 }
