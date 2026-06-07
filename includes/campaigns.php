@@ -218,6 +218,7 @@ function campaign_classify_sectors(int $batchSize = 40, int $maxBatches = 0): ar
     $updated = 0; $batches = 0;
     $vocab   = campaign_sectors_vocab();
 
+    $fail = 0;
     while ($maxBatches === 0 || $batches < $maxBatches) {
         $rows = $pdo->query("SELECT id, company FROM leads
                              WHERE (industry IS NULL OR industry = '')
@@ -235,12 +236,23 @@ function campaign_classify_sectors(int $batchSize = 40, int $maxBatches = 0): ar
         $user = "Clasificá estas empresas (formato 'id: nombre'):\n\n{$list}\n\n"
               . "Respondé SOLO el JSON: {\"<id>\": \"<sector>\", ...}";
 
-        $r = claude_call($system, $user, 1800, 0);
+        $r   = claude_call($system, $user, 1800, 0);
         $batches++;
-        if (!$r['ok']) break;
+        $map = $r['ok'] ? extract_json($r['text']) : null;
 
-        $map = extract_json($r['text']);
-        if (!is_array($map)) continue;
+        // Tolerancia a fallos: reintenta una vez; si insiste, marca el lote como 'otro' y avanza.
+        if (!is_array($map)) {
+            $fail++;
+            if ($fail >= 2) {
+                $ids = array_map(function ($x) { return (int)$x['id']; }, $rows);
+                $pdo->exec("UPDATE leads SET industry = 'otro' WHERE id IN (" . implode(',', $ids) . ") AND (industry IS NULL OR industry = '')");
+                $fail = 0;
+            } else {
+                usleep(2000000); // backoff ante posible rate limit
+            }
+            continue;
+        }
+        $fail = 0;
 
         $upd = $pdo->prepare("UPDATE leads SET industry = ? WHERE id = ? AND (industry IS NULL OR industry = '')");
         foreach ($map as $id => $sector) {
