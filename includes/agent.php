@@ -216,3 +216,76 @@ function agent_mark(int $id, string $status, string $result = ''): void {
     db()->prepare("UPDATE agent_tasks SET status = ?, result = ?, executed_at = NOW() WHERE id = ?")
         ->execute([$status, $result, $id]);
 }
+
+// ── Administración de secuencias (editor visual, sin JSON manual) ─────────────
+
+/** Lista TODAS las secuencias con sus pasos decodificados (para administrar). */
+function sequences_all(): array {
+    $rows = db()->query("SELECT * FROM sequences ORDER BY id")->fetchAll();
+    foreach ($rows as &$r) {
+        $steps = json_decode((string)$r['steps_json'], true);
+        $r['steps']      = is_array($steps) ? $steps : [];
+        $r['step_count'] = count($r['steps']);
+        unset($r['steps_json']);
+    }
+    return $rows;
+}
+
+/** Una secuencia por id, con pasos decodificados. */
+function sequence_get(int $id): ?array {
+    $st = db()->prepare("SELECT * FROM sequences WHERE id = ?");
+    $st->execute([$id]);
+    $r = $st->fetch();
+    if (!$r) return null;
+    $steps = json_decode((string)$r['steps_json'], true);
+    $r['steps'] = is_array($steps) ? $steps : [];
+    return $r;
+}
+
+/**
+ * Crea o actualiza una secuencia desde pasos ESTRUCTURADOS (array), no JSON manual.
+ * Cada paso: {day:int, channel:'email'|'whatsapp'|'linkedin', goal:string}. Devuelve el id.
+ */
+function sequence_save(array $f): int {
+    $pdo    = db();
+    $name   = trim((string)($f['name'] ?? '')) ?: 'Secuencia sin nombre';
+    $desc   = trim((string)($f['description'] ?? ''));
+    $active = !empty($f['active']) ? 1 : 0;
+
+    $steps = [];
+    foreach ((array)($f['steps'] ?? []) as $s) {
+        $goal = trim((string)($s['goal'] ?? ''));
+        if ($goal === '') continue;
+        $steps[] = [
+            'day'     => max(0, (int)($s['day'] ?? 0)),
+            'channel' => in_array(($s['channel'] ?? 'email'), ['email','whatsapp','linkedin'], true) ? $s['channel'] : 'email',
+            'goal'    => $goal,
+        ];
+    }
+    usort($steps, function ($a, $b) { return $a['day'] <=> $b['day']; });
+    $json = json_encode($steps, JSON_UNESCAPED_UNICODE);
+
+    $id = (int)($f['id'] ?? 0);
+    if ($id) {
+        $pdo->prepare("UPDATE sequences SET name = ?, description = ?, steps_json = ?, active = ?, updated_at = NOW() WHERE id = ?")
+            ->execute([$name, $desc, $json, $active, $id]);
+        return $id;
+    }
+    $pdo->prepare("INSERT INTO sequences (name, description, target_stage, steps_json, active) VALUES (?, ?, 'prospecto', ?, ?)")
+        ->execute([$name, $desc, $json, $active]);
+    return (int)$pdo->lastInsertId();
+}
+
+/** Elimina una secuencia. */
+function sequence_delete(int $id): void {
+    db()->prepare("DELETE FROM sequences WHERE id = ?")->execute([$id]);
+}
+
+/** Activa/pausa una secuencia. Devuelve el nuevo estado legible. */
+function sequence_toggle(int $id): string {
+    $s = sequence_get($id);
+    if (!$s) return '';
+    $new = $s['active'] ? 0 : 1;
+    db()->prepare("UPDATE sequences SET active = ? WHERE id = ?")->execute([$new, $id]);
+    return $new ? 'activa' : 'pausada';
+}
