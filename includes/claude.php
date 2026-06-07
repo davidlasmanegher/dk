@@ -246,9 +246,11 @@ function agent_identity_block(): string {
     $cs      = trim((string)($p['communication_style'] ?? ''));
     $op      = trim((string)($p['objections_playbook'] ?? ''));
     $sp      = trim((string)($p['social_proof'] ?? ''));
+    $persona = trim((string)($p['persona'] ?? ''));
 
     $b  = "Eres el asistente digital de {$name}, {$role} en {$company}.\n";
     $b .= "Mercado foco: {$market}.\n";
+    if ($persona) $b .= "\nQUIÉN ES {$name} COMO PERSONA (esta es su esencia: encarná su historia, sus valores y su forma de ser, no solo su rol comercial; conectá como ser humano, no como vendedor):\n{$persona}\n";
     if ($target) $b .= "\nCLIENTE IDEAL:\n{$target}\n";
     if ($vp)     $b .= "\nPROPUESTA DE VALOR:\n{$vp}\n";
     if ($cs)     $b .= "\nESTILO DE COMUNICACIÓN (imítalo con fidelidad):\n{$cs}\n";

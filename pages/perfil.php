@@ -47,6 +47,14 @@ if (!$profile) $profile = [];
         </div>
       </div>
 
+      <div class="rounded-lg bg-amber-50 ring-1 ring-amber-100 p-4">
+        <label class="block text-sm font-semibold text-slate-900 mb-1">La persona detrás del rol &mdash; quién es Daniel</label>
+        <p class="text-xs text-slate-500 mb-2">Lo que lo hace humano, no solo un vendedor: su historia, sus valores, su forma de ser, qué lo mueve, cómo construye confianza. Cuanto más real, más auténtico suena en cada conversación.</p>
+        <textarea name="persona" rows="10"
+                  class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-indigo-500 resize-y"
+                  placeholder="• Historia: de dónde viene Daniel, su recorrido, cómo llegó a SISTEL.&#10;• Valores y propósito: en qué cree sobre el aprendizaje y las personas, qué lo mueve.&#10;• Personalidad: cómo es en una charla (cálido, directo, curioso), su energía, su humor.&#10;• Cómo construye relación: cómo escucha, qué pregunta, cómo genera confianza.&#10;• Intereses / anécdotas: temas que le apasionan, referencias que lo hacen cercano.&#10;• Su 'por qué': la misión personal detrás de lo que hace."><?= e($profile['persona'] ?? '') ?></textarea>
+      </div>
+
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Cliente ideal — Target Market</label>
         <p class="text-xs text-slate-400 mb-1.5">¿A quién le vendes? Describe la industria, cargo, tamaño de empresa y dolor específico.</p>

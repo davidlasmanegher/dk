@@ -251,6 +251,7 @@ try {
         "ALTER TABLE leads ADD INDEX idx_segment (segment)",
         "ALTER TABLE leads ADD INDEX idx_score (score)",
         "ALTER TABLE agent_profile ADD COLUMN social_proof TEXT NULL AFTER objections_playbook",
+        "ALTER TABLE agent_profile ADD COLUMN persona LONGTEXT NULL AFTER communication_style",
     ];
     foreach ($migrations as $m) {
         try { $pdo->exec($m); } catch (Throwable $e) { /* ya existe — ignorar */ }
