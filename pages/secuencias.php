@@ -1,21 +1,39 @@
 <?php
-/** Secuencias de outreach — editor visual de cadencias (sin JSON). */
+/** Secuencias de outreach — constructor de flujos visual (estilo Botpress) con Drawflow. */
 ?>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.css">
+<script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
+<style>
+  #flowCanvas { width:100%; height:440px; border-radius:12px; border:1px solid #e2e8f0;
+    background:#f8fafc; background-image:radial-gradient(#e2e8f0 1px, transparent 1px); background-size:20px 20px; }
+  #flowCanvas .drawflow-node { background:transparent; border:0; padding:0; box-shadow:none; width:230px; }
+  #flowCanvas .drawflow-node.selected .seq-card { box-shadow:0 0 0 2px #6366f1; }
+  .seq-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); font-size:13px; }
+  .seq-card .seq-head { padding:8px 10px; font-weight:600; color:#fff; display:flex; align-items:center; gap:6px; font-size:12px; }
+  .seq-head.h-start { background:#0f172a; }
+  .seq-head.h-step  { background:#6366f1; }
+  .seq-body { padding:10px; display:flex; flex-direction:column; gap:7px; }
+  .seq-body label { font-size:11px; color:#64748b; display:block; margin-bottom:2px; }
+  .seq-body input, .seq-body select { width:100%; border:1px solid #cbd5e1; border-radius:7px; padding:5px 7px; font-size:12px; outline:none; background:#fff; }
+  .seq-body input:focus, .seq-body select:focus { border-color:#6366f1; }
+  .seq-row2 { display:flex; gap:7px; }
+  #flowCanvas .drawflow .connection .main-path { stroke:#94a3b8; stroke-width:2px; }
+</style>
+
 <div class="space-y-5">
 
   <div class="bg-indigo-50 ring-1 ring-indigo-200 rounded-xl px-5 py-4 text-sm text-indigo-900">
-    <strong class="font-semibold">¿Qué es una secuencia?</strong> &mdash;
-    Es la serie de toques que Daniel hace en el tiempo para un prospecto (correo, WhatsApp, LinkedIn).
-    Definí cada paso: <strong>en qué día</strong>, <strong>por qué canal</strong> y <strong>con qué objetivo</strong>.
-    Daniel redacta cada mensaje en su voz cuando llega el día; vos solo aprobás.
+    <strong class="font-semibold">Constructor de rutinas</strong> &mdash;
+    Cada tarjeta es un toque (correo, WhatsApp, LinkedIn). El lazo arranca en <strong>Inicio</strong> y sigue las flechas.
+    Agregá pasos, definí el día y el objetivo de cada uno. Daniel redacta el mensaje cuando llega el día; vos aprobás.
   </div>
 
   <div class="bg-white rounded-xl ring-1 ring-slate-200 px-5 py-3.5 flex items-center">
-    <span class="text-sm text-slate-500">Tus cadencias de seguimiento. Se usan en las campañas y al inscribir un lead.</span>
+    <span class="text-sm text-slate-500">Tus rutinas de seguimiento. Se usan en las campañas y al inscribir un lead.</span>
     <button onclick="openSeqModal(0)"
             class="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition">
       <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-      Nueva secuencia
+      Nueva rutina
     </button>
   </div>
 
@@ -25,46 +43,43 @@
 
 </div>
 
-<!-- Modal editor -->
-<div id="seqModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,.4);backdrop-filter:blur(3px)">
-  <div class="bg-white rounded-2xl shadow-2xl ring-1 ring-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col">
+<!-- Modal editor de flujo -->
+<div id="seqModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,.45);backdrop-filter:blur(3px)">
+  <div class="bg-white rounded-2xl shadow-2xl ring-1 ring-slate-200 w-full max-w-5xl max-h-[92vh] flex flex-col">
     <header class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-      <h2 id="seqModalTitle" class="text-base font-semibold text-slate-900">Nueva secuencia</h2>
+      <h2 id="seqModalTitle" class="text-base font-semibold text-slate-900">Nueva rutina</h2>
       <button onclick="closeSeqModal()" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
     </header>
     <div class="px-6 py-5 overflow-y-auto flex-1 space-y-4">
       <input type="hidden" id="s_id">
-      <div>
-        <label class="block text-xs font-medium text-slate-600 mb-1">Nombre *</label>
-        <input type="text" id="s_name" placeholder="Ej: Cadencia consultiva México"
-               class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-slate-600 mb-1">Descripción (opcional)</label>
-        <input type="text" id="s_desc" placeholder="Para qué sirve esta secuencia"
-               class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Nombre *</label>
+          <input type="text" id="s_name" placeholder="Ej: Cadencia consultiva México"
+                 class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Descripción (opcional)</label>
+          <input type="text" id="s_desc" placeholder="Para qué sirve"
+                 class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+        </div>
       </div>
 
-      <div>
-        <div class="flex items-center justify-between mb-2">
-          <label class="text-xs font-medium text-slate-600">Pasos de la secuencia</label>
-          <button onclick="addStepRow()" class="text-xs font-medium text-indigo-600 hover:underline flex items-center gap-1">
-            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-            Agregar paso
-          </button>
-        </div>
-        <div class="flex items-center gap-2 px-1 mb-1 text-[11px] font-medium text-slate-400 uppercase tracking-wide">
-          <span class="w-16 shrink-0">Día</span>
-          <span class="w-32 shrink-0">Canal</span>
-          <span class="flex-1">Objetivo del mensaje</span>
-          <span class="w-6 shrink-0"></span>
-        </div>
-        <div id="stepsList" class="space-y-2"></div>
-        <p class="text-[11px] text-slate-400 mt-2">El "día" es cuántos días después del inicio se envía ese paso (0 = el mismo día).</p>
+      <div class="flex items-center gap-2">
+        <button onclick="addStepNode()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700">
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Agregar paso
+        </button>
+        <button onclick="removeSelected()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ring-1 ring-slate-300 text-slate-600 text-xs font-medium hover:bg-slate-50">
+          Quitar paso seleccionado
+        </button>
+        <span class="text-[11px] text-slate-400 ml-1">Arrastrá las tarjetas para acomodarlas. El orden lo dan las flechas.</span>
       </div>
+
+      <div id="flowCanvas"></div>
 
       <label class="flex items-center gap-2 text-sm text-slate-700">
-        <input type="checkbox" id="s_active" class="accent-indigo-600" checked> Secuencia activa (disponible para campañas e inscripción)
+        <input type="checkbox" id="s_active" class="accent-indigo-600" checked> Rutina activa (disponible para campañas e inscripción)
       </label>
     </div>
     <footer class="px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl flex items-center justify-end gap-2.5">
@@ -75,67 +90,90 @@
 </div>
 
 <script>
-var CHANNELS = [['email','Email'],['whatsapp','WhatsApp'],['linkedin','LinkedIn']];
 var chanLabel = { email:'Email', whatsapp:'WhatsApp', linkedin:'LinkedIn' };
 var chanColor = { email:'bg-sky-50 text-sky-700 ring-sky-200', whatsapp:'bg-emerald-50 text-emerald-700 ring-emerald-200', linkedin:'bg-indigo-50 text-indigo-700 ring-indigo-200' };
+var editor = null, lastNodeId = null, posX = 40, posY = 60;
 
+// ── Lista de rutinas ─────────────────────────────────────────────────────────
 async function loadSequences() {
   var grid = document.getElementById('seqGrid');
   grid.innerHTML = '<div class="col-span-2 text-center py-8 text-sm text-slate-400">Cargando…</div>';
   var r = await api('api/sequences.php', { action: 'list' });
   if (!r || !r.ok || !r.sequences || r.sequences.length === 0) {
-    grid.innerHTML = '<div class="col-span-2 text-center py-12 text-sm text-slate-400">Sin secuencias todavía. Creá la primera.</div>';
+    grid.innerHTML = '<div class="col-span-2 text-center py-12 text-sm text-slate-400">Sin rutinas todavía. Creá la primera.</div>';
     return;
   }
   grid.innerHTML = r.sequences.map(function(s) {
     var badge = s.active == 1 ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-slate-100 text-slate-500 ring-slate-200';
     var estado = s.active == 1 ? 'activa' : 'pausada';
-    var steps = (s.steps || []).map(function(st) {
+    var steps = (s.steps || []).map(function(st, i) {
       var cc = chanColor[st.channel] || 'bg-slate-100 text-slate-600 ring-slate-200';
-      return '<div class="flex items-center gap-2 text-sm">'
-        + '<span class="shrink-0 w-12 text-xs text-slate-400">Día ' + (st.day|0) + '</span>'
-        + '<span class="shrink-0 inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ring-1 ' + cc + '">' + (chanLabel[st.channel] || st.channel) + '</span>'
-        + '<span class="text-slate-600 line-clamp-1">' + escapeHtml(st.goal || '') + '</span>'
-        + '</div>';
-    }).join('');
+      var arrow = i > 0 ? '<span class="text-slate-300">→</span>' : '';
+      return arrow + '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ring-1 ' + cc + '">D' + (st.day|0) + '·' + (chanLabel[st.channel] || st.channel) + '</span>';
+    }).join(' ');
     return '<div class="bg-white rounded-xl ring-1 ring-slate-200 p-5">'
       + '<div class="flex items-start justify-between gap-2 mb-1">'
       +   '<div class="font-semibold text-slate-900">' + escapeHtml(s.name) + '</div>'
       +   '<span class="shrink-0 inline-flex px-2 py-0.5 rounded-full text-xs font-medium ring-1 ' + badge + '">' + estado + '</span>'
       + '</div>'
       + (s.description ? '<div class="text-xs text-slate-500 mb-3">' + escapeHtml(s.description) + '</div>' : '<div class="mb-3"></div>')
-      + '<div class="space-y-1.5 mb-4">' + (steps || '<span class="text-xs text-slate-400">Sin pasos.</span>') + '</div>'
+      + '<div class="flex items-center gap-1.5 flex-wrap mb-4">' + (steps || '<span class="text-xs text-slate-400">Sin pasos.</span>') + '</div>'
       + '<div class="flex items-center gap-2 border-t border-slate-100 pt-3">'
-      +   '<button onclick="openSeqModal(' + s.id + ')" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700">Editar</button>'
+      +   '<button onclick="openSeqModal(' + s.id + ')" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700">Editar flujo</button>'
       +   '<button onclick="toggleSeq(' + s.id + ')" class="px-3 py-1.5 rounded-lg ring-1 ring-slate-300 text-xs font-medium text-slate-700 hover:bg-slate-50">' + (s.active == 1 ? 'Pausar' : 'Activar') + '</button>'
       +   '<button onclick="deleteSeq(' + s.id + ')" class="ml-auto text-xs text-red-600 hover:underline">Eliminar</button>'
-      + '</div>'
-      + '</div>';
+      + '</div></div>';
   }).join('');
 }
 
-function stepRowHtml(day, channel, goal) {
-  var opts = CHANNELS.map(function(c) {
-    return '<option value="' + c[0] + '"' + (c[0] === channel ? ' selected' : '') + '>' + c[1] + '</option>';
-  }).join('');
-  var div = document.createElement('div');
-  div.className = 'step-row flex items-center gap-2';
-  div.innerHTML =
-      '<input type="number" min="0" value="' + (parseInt(day) || 0) + '" class="step-day w-16 shrink-0 rounded-lg ring-1 ring-slate-300 px-2 py-2 text-sm focus:outline-none focus:ring-indigo-500">'
-    + '<select class="step-channel w-32 shrink-0 rounded-lg ring-1 ring-slate-300 px-2 py-2 text-sm focus:outline-none focus:ring-indigo-500">' + opts + '</select>'
-    + '<input type="text" value="' + (goal ? escapeHtml(goal).replace(/"/g, "&quot;") : "") + '" placeholder="Ej: Presentación con prueba social" class="step-goal flex-1 rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">'
-    + '<button type="button" onclick="this.parentNode.remove()" class="w-6 h-6 shrink-0 grid place-items-center rounded text-slate-400 hover:text-red-600 hover:bg-red-50">&times;</button>';
-  return div;
+// ── Editor de flujo (Drawflow) ───────────────────────────────────────────────
+function ensureEditor() {
+  if (editor) return;
+  editor = new Drawflow(document.getElementById('flowCanvas'));
+  editor.reroute = true;
+  editor.start();
 }
 
-function addStepRow(day, channel, goal) {
-  document.getElementById('stepsList').appendChild(stepRowHtml(day || 0, channel || 'email', goal || ''));
+function startNodeHtml() {
+  return '<div class="seq-card"><div class="seq-head h-start">&#9654; Inicio</div>'
+    + '<div class="seq-body"><div style="font-size:12px;color:#64748b">El lead entra a la rutina</div></div></div>';
+}
+function stepNodeHtml() {
+  return '<div class="seq-card"><div class="seq-head h-step">&#9993; Paso</div>'
+    + '<div class="seq-body">'
+    + '<div class="seq-row2"><div style="width:70px"><label>Día</label><input type="number" df-day min="0" value="0"></div>'
+    + '<div style="flex:1"><label>Canal</label><select df-channel><option value="email">Email</option><option value="whatsapp">WhatsApp</option><option value="linkedin">LinkedIn</option></select></div></div>'
+    + '<div><label>Objetivo del mensaje</label><input df-goal placeholder="Ej: Presentación con prueba social"></div>'
+    + '</div></div>';
+}
+
+function addStartNode(x, y) {
+  return editor.addNode('inicio', 0, 1, x, y, 'nodeStart', {}, startNodeHtml());
+}
+function addStepNode(day, channel, goal) {
+  var id = editor.addNode('paso', 1, 1, posX, posY, 'nodeStep',
+                          { day: (day || 0), channel: (channel || 'email'), goal: (goal || '') }, stepNodeHtml());
+  if (lastNodeId !== null) {
+    try { editor.addConnection(lastNodeId, id, 'output_1', 'input_1'); } catch (e) {}
+  }
+  lastNodeId = id;
+  posX += 260;
+  if (posX > 1000) { posX = 40; posY += 230; }
+  return id;
+}
+
+function removeSelected() {
+  if (editor && editor.node_selected) { editor.removeNodeId('node-' + editor.node_selected.id); }
+  else { toast('Tocá una tarjeta de paso para seleccionarla y luego quitarla.', 'error'); }
 }
 
 async function openSeqModal(id) {
-  document.getElementById('seqModalTitle').textContent = id ? 'Editar secuencia' : 'Nueva secuencia';
-  var list = document.getElementById('stepsList');
-  list.innerHTML = '';
+  document.getElementById('seqModalTitle').textContent = id ? 'Editar rutina' : 'Nueva rutina';
+  document.getElementById('seqModal').classList.remove('hidden');
+  ensureEditor();
+  editor.clear();
+  lastNodeId = null; posX = 40; posY = 60;
+
   if (id) {
     var r = await api('api/sequences.php', { action: 'get', id: id });
     if (!r || !r.ok) { toast('No se pudo cargar.', 'error'); return; }
@@ -144,30 +182,43 @@ async function openSeqModal(id) {
     document.getElementById('s_name').value = s.name || '';
     document.getElementById('s_desc').value = s.description || '';
     document.getElementById('s_active').checked = (s.active == 1);
-    (s.steps || []).forEach(function(st) { addStepRow(st.day, st.channel, st.goal); });
-    if (!(s.steps || []).length) addStepRow();
+    lastNodeId = addStartNode(40, 60);
+    posX = 300; posY = 60;
+    (s.steps || []).forEach(function(st) { addStepNode(st.day, st.channel, st.goal); });
+    if (!(s.steps || []).length) addStepNode(0, 'email', '');
   } else {
     document.getElementById('s_id').value = '';
     document.getElementById('s_name').value = '';
     document.getElementById('s_desc').value = '';
     document.getElementById('s_active').checked = true;
-    addStepRow(0, 'email', '');
+    lastNodeId = addStartNode(40, 60);
+    posX = 300; posY = 60;
+    addStepNode(0, 'email', '');
   }
-  document.getElementById('seqModal').classList.remove('hidden');
 }
 function closeSeqModal() { document.getElementById('seqModal').classList.add('hidden'); }
 
+// Recorre el flujo desde Inicio siguiendo las flechas y arma los pasos en orden.
 function collectSteps() {
-  var steps = [];
-  document.querySelectorAll('#stepsList .step-row').forEach(function(row) {
-    var goal = row.querySelector('.step-goal').value.trim();
-    if (!goal) return;
-    steps.push({
-      day: parseInt(row.querySelector('.step-day').value) || 0,
-      channel: row.querySelector('.step-channel').value,
-      goal: goal,
-    });
-  });
+  var dump = editor.export().drawflow.Home.data;
+  var startId = null;
+  Object.keys(dump).forEach(function(k) { if (dump[k].name === 'inicio') startId = k; });
+  var steps = [], cur = startId, guard = 0;
+  while (cur && guard++ < 60) {
+    var node = dump[cur];
+    var conns = (node.outputs && node.outputs.output_1) ? node.outputs.output_1.connections : [];
+    if (!conns || !conns.length) break;
+    var nextId = conns[0].node;
+    var nd = dump[nextId];
+    if (nd && nd.name === 'paso') {
+      var el = document.getElementById('node-' + nextId);
+      var day = el ? el.querySelector('[df-day]').value : nd.data.day;
+      var ch  = el ? el.querySelector('[df-channel]').value : nd.data.channel;
+      var goal = el ? el.querySelector('[df-goal]').value : nd.data.goal;
+      if ((goal || '').trim() !== '') steps.push({ day: parseInt(day) || 0, channel: ch || 'email', goal: goal.trim() });
+    }
+    cur = nextId;
+  }
   return steps;
 }
 
@@ -175,7 +226,7 @@ async function saveSequence() {
   var name = document.getElementById('s_name').value.trim();
   if (!name) { toast('Ponele un nombre.', 'error'); return; }
   var steps = collectSteps();
-  if (!steps.length) { toast('Agregá al menos un paso con objetivo.', 'error'); return; }
+  if (!steps.length) { toast('Agregá al menos un paso con objetivo, conectado al flujo.', 'error'); return; }
   var btn = document.getElementById('s_save');
   var restore = loading(btn, 'Guardando…');
   var r = await api('api/sequences.php', {
@@ -187,20 +238,19 @@ async function saveSequence() {
     steps: steps,
   });
   restore();
-  if (r && r.ok) { toast('Secuencia guardada.', 'ok'); closeSeqModal(); loadSequences(); }
+  if (r && r.ok) { toast('Rutina guardada.', 'ok'); closeSeqModal(); loadSequences(); }
   else toast((r && r.error) || 'Error al guardar.', 'error');
 }
 
 async function toggleSeq(id) {
   var r = await api('api/sequences.php', { action: 'toggle', id: id });
-  if (r && r.ok) { toast('Secuencia ' + r.status + '.', 'ok'); loadSequences(); }
+  if (r && r.ok) { toast('Rutina ' + r.status + '.', 'ok'); loadSequences(); }
   else toast('Error.', 'error');
 }
-
 async function deleteSeq(id) {
-  if (!confirm('¿Eliminar esta secuencia? Las campañas que la usaban quedarán sin cadencia.')) return;
+  if (!confirm('¿Eliminar esta rutina? Las campañas que la usaban quedarán sin cadencia.')) return;
   var r = await api('api/sequences.php', { action: 'delete', id: id });
-  if (r && r.ok) { toast('Secuencia eliminada.', 'ok'); loadSequences(); }
+  if (r && r.ok) { toast('Rutina eliminada.', 'ok'); loadSequences(); }
   else toast('Error.', 'error');
 }
 
