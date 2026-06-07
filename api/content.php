@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/claude.php';
 require_once __DIR__ . '/../includes/linkedin.php';
+require_once __DIR__ . '/../includes/outreach.php';  // trae knowledge_context, learning_context, scrub_social_proof
 boot();
 verify_csrf_token();
 require_once __DIR__ . '/../includes/auth.php';
@@ -123,8 +124,14 @@ switch ($action) {
             }
         }
 
+        // Conocimiento (RAG) + ejemplos aprendidos, para que el contenido cite casos y estrategia reales.
+        $kctx = knowledge_context(trim($typeLabel . ' ' . $context), 5);
+        $lc   = learning_context(3);
+
         // Identidad/voz del agente desde el motor compartido + formato de salida.
         $system = agent_identity_block()
+            . ($kctx !== '' ? "\n\n" . $kctx : '')
+            . ($lc   !== '' ? "\n\n" . $lc   : '')
             . "\n\nTu tarea: generar {$typeLabel}."
             . "\nResponde ÚNICAMENTE en JSON con este formato:"
             . "\n{\"title\":\"...\", \"body\":\"...\", \"hook\":\"...\", \"cta\":\"...\"}";
@@ -143,8 +150,8 @@ switch ($action) {
 
         json_out([
             'ok'    => true,
-            'title' => (string)($parsed['title'] ?? ''),
-            'body'  => (string)($parsed['body']  ?? $r['text']),
+            'title' => scrub_social_proof((string)($parsed['title'] ?? '')),
+            'body'  => scrub_social_proof((string)($parsed['body']  ?? $r['text'])),
             'hook'  => (string)($parsed['hook']  ?? ''),
             'cta'   => (string)($parsed['cta']   ?? ''),
             'type'  => $type,
