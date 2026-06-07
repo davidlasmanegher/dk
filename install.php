@@ -223,6 +223,22 @@ try {
         CONSTRAINT fk_cl_lead FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    $pdo->exec("CREATE TABLE IF NOT EXISTS learning_examples (
+        id            INT AUTO_INCREMENT PRIMARY KEY,
+        source        VARCHAR(20) DEFAULT 'inbox',
+        lead_id       INT NULL,
+        channel       VARCHAR(20) DEFAULT 'email',
+        context       TEXT,
+        ai_version    LONGTEXT,
+        final_version LONGTEXT,
+        diff_summary  JSON,
+        kept_as_is    TINYINT(1) DEFAULT 0,
+        rating        TINYINT DEFAULT 0,
+        created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_source (source),
+        INDEX idx_created (created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
     $log[] = "Tablas creadas/verificadas.";
 
     // 3. Migraciones idempotentes (ALTER TABLE con try/catch).

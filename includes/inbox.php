@@ -48,6 +48,7 @@ function inbox_generate_reply(array $lead, string $incoming, string $channel): a
         . "(validar, reinterpretar, conectar con valor de negocio, proponer un paso suave sin compromiso). Sé breve, humano y útil.";
     $kctx = knowledge_context($incoming . ' ' . ($lead['company'] ?? ''), 4);
     if ($kctx !== '') $system .= "\n\n" . $kctx;
+    $lc = learning_context(3); if ($lc !== '') $system .= "\n\n" . $lc;
     $leadName = trim(($lead['first_name'] ?? '') . ' ' . ($lead['last_name'] ?? ''));
     $hist = outreach_lead_history((int)$lead['id'], 8);
     $user = "PROSPECTO: {$leadName} · " . ($lead['role'] ?: '—') . " · " . ($lead['company'] ?: '—') . "\n";
@@ -122,6 +123,7 @@ function inbox_approve(int $id, ?string $editedBody = null): array {
 
     $pdo->prepare("UPDATE inbox_messages SET status = 'respondido', reply_draft = ?, replied_at = NOW() WHERE id = ?")
         ->execute([$body, $id]);
+    learning_record('inbox', (int)$m['lead_id'], (string)$m['channel'], (string)$m['body'], (string)$m['reply_draft'], $body);
     return ['ok' => true, 'channel' => $res['channel']];
 }
 

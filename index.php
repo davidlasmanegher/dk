@@ -23,6 +23,7 @@ $pages = [
     'agente'    => 'Agente Autónomo',
     'campanas'  => 'Campañas',
     'secuencias'=> 'Secuencias',
+    'aprendizaje'=> 'Aprendizaje',
     'perfil'    => 'Perfil del Agente',
     'conocimiento' => 'Conocimiento',
     'outreach'  => 'Secuencias',

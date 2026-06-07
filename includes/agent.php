@@ -193,6 +193,12 @@ function agent_approve_task(int $id): array {
 
     agent_mark($id, 'completada', 'Aprobado y enviado por ' . $sent['channel']);
 
+    // Aprendizaje: el mensaje aprobado queda como ejemplo del estilo correcto.
+    $lsrc = !empty($p['campaign_id']) ? 'campaign' : (string)($t['type'] ?? 'outreach');
+    learning_record($lsrc, (int)$t['lead_id'], (string)($p['channel'] ?? 'email'),
+        (string)(!empty($p['goal']) ? $p['goal'] : ($p['reason'] ?? '')),
+        (string)($p['body'] ?? ''), (string)($p['body'] ?? ''));
+
     // Si la sugerencia viene de una campaña, marca al lead como contactado.
     if (!empty($p['campaign_id'])) {
         db()->prepare("UPDATE campaign_leads SET status = 'contactado' WHERE task_id = ?")->execute([$id]);
