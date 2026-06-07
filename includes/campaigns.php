@@ -200,3 +200,59 @@ function campaign_report(): array {
     }
     return $report;
 }
+
+/** Sectores válidos para la clasificación (controla el vocabulario). */
+function campaign_sectors_vocab(): string {
+    return 'farma, salud, financiero, seguros, banca, manufactura, consumo masivo, retail, '
+         . 'tecnología, telecomunicaciones, energía, construcción, educación, gobierno, '
+         . 'automotriz, alimentos y bebidas, logística, minería, turismo, servicios profesionales, otro';
+}
+
+/**
+ * Clasifica el sector (industry) de leads que no lo tienen, infiriéndolo de la empresa con IA.
+ * Procesa en lotes. maxBatches=0 = todos los lotes hasta agotar.
+ * @return array{updated:int, batches:int, remaining:int}
+ */
+function campaign_classify_sectors(int $batchSize = 40, int $maxBatches = 0): array {
+    $pdo     = db();
+    $updated = 0; $batches = 0;
+    $vocab   = campaign_sectors_vocab();
+
+    while ($maxBatches === 0 || $batches < $maxBatches) {
+        $rows = $pdo->query("SELECT id, company FROM leads
+                             WHERE (industry IS NULL OR industry = '')
+                               AND company IS NOT NULL AND company <> ''
+                             ORDER BY id LIMIT " . (int)$batchSize)->fetchAll();
+        if (!$rows) break;
+
+        $list = '';
+        foreach ($rows as $r) $list .= $r['id'] . ': ' . $r['company'] . "\n";
+
+        $system = "Sos un clasificador de empresas (mayormente mexicanas) por sector/industria. "
+                . "Devolvés ÚNICAMENTE un objeto JSON que mapea el id de cada empresa a su sector. "
+                . "Sectores válidos (elegí el más cercano, en minúsculas, exactamente uno): {$vocab}. "
+                . "Si no podés determinarlo, usá 'otro'. No agregues texto fuera del JSON.";
+        $user = "Clasificá estas empresas (formato 'id: nombre'):\n\n{$list}\n\n"
+              . "Respondé SOLO el JSON: {\"<id>\": \"<sector>\", ...}";
+
+        $r = claude_call($system, $user, 1800, 0);
+        $batches++;
+        if (!$r['ok']) break;
+
+        $map = extract_json($r['text']);
+        if (!is_array($map)) continue;
+
+        $upd = $pdo->prepare("UPDATE leads SET industry = ? WHERE id = ? AND (industry IS NULL OR industry = '')");
+        foreach ($map as $id => $sector) {
+            $sector = trim((string)$sector);
+            if ($sector === '') $sector = 'otro';
+            $upd->execute([mb_substr($sector, 0, 120), (int)$id]);
+            $updated++;
+        }
+    }
+
+    $remaining = (int)$pdo->query("SELECT COUNT(*) FROM leads
+                                   WHERE (industry IS NULL OR industry = '')
+                                     AND company IS NOT NULL AND company <> ''")->fetchColumn();
+    return ['updated' => $updated, 'batches' => $batches, 'remaining' => $remaining];
+}

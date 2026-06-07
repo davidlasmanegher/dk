@@ -78,6 +78,19 @@ switch ($action) {
     case 'sequences':
         json_out(['ok' => true, 'sequences' => agent_sequences()]);
 
+    case 'classify_status': {
+        $pending = (int)db()->query("SELECT COUNT(*) FROM leads WHERE (industry IS NULL OR industry='') AND company IS NOT NULL AND company<>''")->fetchColumn();
+        $total   = (int)db()->query("SELECT COUNT(*) FROM leads WHERE company IS NOT NULL AND company<>''")->fetchColumn();
+        json_out(['ok' => true, 'pending' => $pending, 'total' => $total]);
+    }
+
+    case 'classify': {
+        @set_time_limit(0);
+        if (!claude_available()) json_out(['ok' => false, 'error' => 'Configura tu API key de Claude en Ajustes.'], 400);
+        $r = campaign_classify_sectors(40, 1); // un lote por request; el frontend itera
+        json_out(['ok' => true] + $r);
+    }
+
     default:
         json_out(['ok' => false, 'error' => "Acción desconocida: {$action}"], 400);
 }

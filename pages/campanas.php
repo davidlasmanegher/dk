@@ -8,8 +8,13 @@
     <div class="text-sm text-slate-500">
       Daniel ejecuta una estrategia: elige los mejores leads de cada foco, prepara el primer contacto y te lo deja para aprobar.
     </div>
+    <button onclick="classifySectors()" id="classifyBtn"
+            class="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-lg ring-1 ring-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg>
+      Clasificar sectores
+    </button>
     <button onclick="openCampModal(0)"
-            class="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition">
+            class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition">
       <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
       Nueva campaña
     </button>
@@ -250,6 +255,27 @@ async function deleteCampaign(id) {
   var r = await api('api/campaigns.php', { action: 'delete', id: id });
   if (r && r.ok) { toast('Campaña eliminada.', 'ok'); loadCampaigns(); }
   else toast('Error.', 'error');
+}
+
+async function classifySectors() {
+  if (!confirm('Daniel va a inferir el sector de cada empresa de tu base con IA (Sanofi → farma, CEMEX → construcción…). Puede tardar un par de minutos. ¿Empezamos?')) return;
+  var btn = document.getElementById('classifyBtn');
+  btn.disabled = true;
+  var st = await api('api/campaigns.php', { action: 'classify_status' });
+  var total = (st && st.ok) ? st.total : 0;
+  var prev = -1, guard = 0;
+  while (guard++ < 300) {
+    var r = await api('api/campaigns.php', { action: 'classify' });
+    if (!r || !r.ok) { toast((r && r.error) || 'Error al clasificar.', 'error'); break; }
+    var done = total - r.remaining;
+    btn.textContent = 'Clasificando… ' + done + '/' + total;
+    if (r.remaining <= 0) { toast('Base clasificada. Ya podés crear campañas por sector.', 'ok'); break; }
+    if (r.remaining === prev) { toast('Clasificación parcial (' + done + '/' + total + '). Reintentá para completar.', 'ok'); break; }
+    prev = r.remaining;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Clasificar sectores';
+  loadCampaigns();
 }
 
 document.getElementById('campModal').addEventListener('click', function(e) { if (e.target === this) closeCampModal(); });
