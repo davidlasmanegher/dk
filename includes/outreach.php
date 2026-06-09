@@ -193,14 +193,12 @@ function outreach_email_html(string $body): string {
     return $html . '</div>';
 }
 
-/** Firma corporativa HTML de Daniel (maquetada, con links, liviana para buena entregabilidad). */
+/** Firma corporativa de Daniel: imagen optimizada (con alt de respaldo y enlace a la web). */
 function outreach_signature_html(): string {
-    return '<table style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:13px;margin-top:22px"><tr><td style="padding-top:14px;border-top:2px solid #2563eb">'
-        . '<div style="font-size:17px;font-weight:700;color:#0f172a">Daniel Khan</div>'
-        . '<div style="display:inline-block;background:#2563eb;color:#ffffff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:5px;margin:5px 0">Senior Business Developer LATAM</div>'
-        . '<div style="margin-top:6px;color:#334155"><a href="mailto:daniel.khan@sistelco.com.mx" style="color:#2563eb;text-decoration:none">daniel.khan@sistelco.com.mx</a>&nbsp; ·&nbsp; <a href="tel:+525598162472" style="color:#334155;text-decoration:none">+52 55 9816 2472</a></div>'
-        . '<div style="margin-top:3px;color:#334155"><a href="https://www.sistelco.com.mx" style="color:#2563eb;text-decoration:none">www.sistelco.com.mx</a>&nbsp; ·&nbsp; <a href="https://www.linkedin.com/company/sistel-m%C3%A9xico/" style="color:#2563eb;text-decoration:none">LinkedIn: sistel-méxico</a></div>'
-        . '<div style="margin-top:4px;color:#64748b;font-size:12px">Bosque Real 8, Depto 604, Huixquilucan, Estado de México, C.P. 52770</div>'
-        . '<div style="margin-top:7px;font-size:12px;color:#0f172a;font-weight:700;letter-spacing:.5px">SISTEL&nbsp; <span style="font-weight:400;color:#94a3b8">| Empresa B Certificada</span></div>'
-        . '</td></tr></table>';
+    return '<div style="margin-top:22px">'
+        . '<a href="https://www.sistelco.com.mx" target="_blank" style="text-decoration:none">'
+        . '<img src="https://www.sisteltools.com/dk/firma-DK-web.png" '
+        . 'alt="Daniel Khan · Senior Business Developer LATAM · SISTEL · daniel.khan@sistelco.com.mx · +52 55 9816 2472 · www.sistelco.com.mx" '
+        . 'width="600" style="display:block;max-width:600px;width:100%;height:auto;border:0">'
+        . '</a></div>';
 }
