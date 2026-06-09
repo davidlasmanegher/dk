@@ -234,7 +234,7 @@ function outreach_signature_html(): string {
     if ($addr !== '')     $foot[] = '<span style="color:#64748b">' . e($addr) . '</span>';
 
     $h  = '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;margin-top:24px"><tr><td style="padding:0">';
-    $h .= '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;width:560px;max-width:560px;background:#ffffff;border:1px solid #e6e8ef;border-radius:16px;font-family:' . $F . '"><tr><td style="padding:26px 30px 20px 30px">';
+    $h .= '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;width:560px;max-width:560px;background:#ffffff;font-family:' . $F . '"><tr><td style="padding:4px 2px">';
     $h .= '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;width:100%"><tr>';
     $h .= '<td valign="top" style="vertical-align:top">';
     $h .= '<div style="font-size:26px;line-height:1.05;font-weight:800;letter-spacing:-0.5px;color:#0f172a;font-family:' . $F . '">' . e($name) . '</div>';
@@ -245,7 +245,6 @@ function outreach_signature_html(): string {
     $h .= '</div></td>';
     $h .= '<td valign="top" align="right" style="vertical-align:top;text-align:right">';
     if ($company !== '') $h .= '<div style="font-size:27px;font-weight:800;letter-spacing:.5px;color:#11151c;font-family:Arial,Helvetica,sans-serif">' . e($company) . '</div>';
-    if ($bcorp) $h .= '<div style="margin-top:14px;display:inline-block;border:1.5px solid #11151c;border-radius:9px;padding:7px 14px;text-align:center;color:#11151c;font-family:Arial,Helvetica,sans-serif"><div style="font-size:8.5px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;line-height:1.4">Empresa</div><div style="font-size:17px;font-weight:800;line-height:1;margin:2px 0">B</div><div style="font-size:8.5px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;line-height:1.4">Certificada</div></div>';
     $h .= '</td></tr></table>';
     $h .= '<div style="border-top:1px solid #ecedf2;margin-top:20px;padding-top:14px;font-size:13px;font-family:' . $F . '">' . implode(' &nbsp;&middot;&nbsp; ', $foot) . '</div>';
     if ($bcorp) $h .= '<div style="margin-top:14px;padding-top:12px;border-top:1px solid #ecedf2;font-size:11.5px;line-height:1.5;color:#475569;font-family:' . $F . '"><span style="font-weight:700;color:#0f172a">Orgullosamente Empresa B Certificada</span><br>Creemos en el poder de las Empresas para generar Bienestar y Prosperidad Colectiva</div>';
