@@ -239,13 +239,12 @@ function outreach_signature_html(): string {
     $h .= '<td valign="top" style="vertical-align:top">';
     $h .= '<div style="font-size:26px;line-height:1.05;font-weight:800;letter-spacing:-0.5px;color:#0f172a;font-family:' . $F . '">' . e($name) . '</div>';
     if ($role !== '') $h .= '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:separate;margin-top:12px"><tr><td style="background:#1f47e6;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;color:#ffffff;font-family:' . $F . ';white-space:nowrap">' . e($role) . '</td></tr></table>';
+    if ($company !== '') $h .= '<div style="margin-top:14px;font-size:18px;font-weight:800;letter-spacing:.5px;color:#11151c;font-family:Arial,Helvetica,sans-serif">' . e($company) . '</div>';
     $h .= '<div style="margin-top:16px;font-size:14px;line-height:1.7;font-family:' . $F . '">';
     if ($email !== '') $h .= '<a href="mailto:' . e($email) . '" style="color:#0f172a;text-decoration:none">' . e($email) . '</a><br>';
     if ($phone !== '') $h .= '<a href="tel:' . e($tel) . '" style="color:#334155;text-decoration:none">' . e($phone) . '</a>';
     $h .= '</div></td>';
-    $h .= '<td valign="top" align="right" style="vertical-align:top;text-align:right">';
-    if ($company !== '') $h .= '<div style="font-size:27px;font-weight:800;letter-spacing:.5px;color:#11151c;font-family:Arial,Helvetica,sans-serif">' . e($company) . '</div>';
-    $h .= '</td></tr></table>';
+    $h .= '</tr></table>';
     $h .= '<div style="border-top:1px solid #ecedf2;margin-top:20px;padding-top:14px;font-size:13px;font-family:' . $F . '">' . implode(' &nbsp;&middot;&nbsp; ', $foot) . '</div>';
     if ($bcorp) $h .= '<div style="margin-top:14px;padding-top:12px;border-top:1px solid #ecedf2;font-size:11.5px;line-height:1.5;color:#475569;font-family:' . $F . '"><span style="font-weight:700;color:#0f172a">Orgullosamente Empresa B Certificada</span><br>Creemos en el poder de las Empresas para generar Bienestar y Prosperidad Colectiva</div>';
     $h .= '</td></tr></table></td></tr></table>';
