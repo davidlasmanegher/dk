@@ -246,6 +246,12 @@ function outreach_signature_html(): string {
     if ($bcorp)          $h .= '<div style="display:inline-block;margin-top:8px;border:1px solid #cbd5e1;border-radius:6px;padding:4px 9px;font-size:10px;font-weight:700;color:#334155;text-align:center;line-height:1.25">Empresa<br>B<br>Certificada</div>';
     $h .= '</td></tr></table>';
     if ($bottom) $h .= '<div style="border-top:1px solid #e2e8f0;margin-top:14px;padding-top:10px;font-size:12px;color:#64748b">' . implode(' &nbsp;·&nbsp; ', $bottom) . '</div>';
+    if ($bcorp) {
+        $h .= '<div style="margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;line-height:1.5;color:#475569">'
+            . '<span style="font-weight:700;color:#0f172a">Orgullosamente Empresa B Certificada</span><br>'
+            . 'Creemos en el poder de las Empresas para generar Bienestar y Prosperidad Colectiva'
+            . '</div>';
+    }
     $h .= '</td></tr></table>';
     return $h;
 }
