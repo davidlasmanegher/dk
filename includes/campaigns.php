@@ -113,7 +113,7 @@ function campaign_select_candidates(array $c, int $limit): array {
     $sql = "SELECT l.* FROM leads l
             WHERE {$where}
               AND NOT EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl.campaign_id = ? AND cl.lead_id = l.id)
-            ORDER BY l.score DESC, l.id ASC
+            ORDER BY (CASE WHEN l.country LIKE '%MEXIC%' OR l.country LIKE '%MÉXIC%' THEN 0 ELSE 1 END) ASC, l.score DESC, l.id ASC
             LIMIT " . (int)($limit * 10);
     $params[] = (int)($c['id'] ?? 0);
     $st = db()->prepare($sql);
