@@ -285,7 +285,7 @@ try {
         'embeddings_model'     => 'text-embedding-3-small',
         'campaign_max_per_company' => '2',
         'signature_name'       => 'Daniel Khan',
-        'signature_role'       => 'Senior Business Developer LATAM',
+        'signature_role'       => 'Senior Business Consultant - LATAM',
         'signature_email'      => 'daniel.khan@sistelco.com.mx',
         'signature_phone'      => '+52 55 9816 2472',
         'signature_web'        => 'www.sistelco.com.mx',
