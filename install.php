@@ -284,6 +284,15 @@ try {
         'embeddings_enabled'   => '1',
         'embeddings_model'     => 'text-embedding-3-small',
         'campaign_max_per_company' => '2',
+        'signature_name'       => 'Daniel Khan',
+        'signature_role'       => 'Senior Business Developer LATAM',
+        'signature_email'      => 'daniel.khan@sistelco.com.mx',
+        'signature_phone'      => '+52 55 9816 2472',
+        'signature_web'        => 'www.sistelco.com.mx',
+        'signature_linkedin'   => 'sistel-méxico',
+        'signature_address'    => 'Bosque Real 8, Depto 604, Huixquilucan, Estado de México, C.P. 52770',
+        'signature_company'    => 'SISTEL',
+        'signature_bcorp'      => '1',
     ];
     $st = $pdo->prepare("INSERT IGNORE INTO settings (skey, svalue) VALUES (?, ?)");
     foreach ($defaults as $k => $v) { $st->execute([$k, $v]); }

@@ -211,12 +211,41 @@ function outreach_email_html(string $body): string {
     return $html . '</div>';
 }
 
-/** Firma corporativa de Daniel: imagen optimizada (con alt de respaldo y enlace a la web). */
+/** Firma corporativa de Daniel: HTML con estilos en línea (look de la tarjeta, sin foto). Parametrizable en Ajustes. */
 function outreach_signature_html(): string {
-    return '<div style="margin-top:22px">'
-        . '<a href="https://www.sistelco.com.mx" target="_blank" style="text-decoration:none">'
-        . '<img src="https://www.sisteltools.com/dk/firma-DK2-web.png" '
-        . 'alt="Daniel Khan · SISTEL · daniel.khan@sistelco.com.mx · +52 55 9816 2472 · www.sistelco.com.mx" '
-        . 'width="600" style="display:block;max-width:600px;width:100%;height:auto;border:0">'
-        . '</a></div>';
+    $name     = trim((string)setting('signature_name', 'Daniel Khan'));
+    $role     = trim((string)setting('signature_role', 'Senior Business Developer LATAM'));
+    $email    = trim((string)setting('signature_email', 'daniel.khan@sistelco.com.mx'));
+    $phone    = trim((string)setting('signature_phone', '+52 55 9816 2472'));
+    $web      = trim((string)setting('signature_web', 'www.sistelco.com.mx'));
+    $linkedin = trim((string)setting('signature_linkedin', 'sistel-méxico'));
+    $addr     = trim((string)setting('signature_address', 'Bosque Real 8, Depto 604, Huixquilucan, Estado de México, C.P. 52770'));
+    $company  = trim((string)setting('signature_company', 'SISTEL'));
+    $bcorp    = (string)setting('signature_bcorp', '1') === '1';
+
+    $tel    = preg_replace('/[^\d+]/', '', $phone);
+    $webUrl = (stripos($web, 'http') === 0) ? $web : 'https://' . $web;
+    $liUrl  = (stripos($linkedin, 'http') === 0) ? $linkedin : ('https://www.linkedin.com/company/' . rawurlencode($linkedin));
+
+    $bottom = [];
+    if ($web !== '')      $bottom[] = '<a href="' . e($webUrl) . '" style="color:#2563eb;text-decoration:none">' . e($web) . '</a>';
+    if ($linkedin !== '') $bottom[] = '<a href="' . e($liUrl) . '" style="color:#2563eb;text-decoration:none">' . e($linkedin) . '</a>';
+    if ($addr !== '')     $bottom[] = '<span style="color:#64748b">' . e($addr) . '</span>';
+
+    $h  = '<table style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;margin-top:24px;max-width:560px;width:100%"><tr>';
+    $h .= '<td style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px">';
+    $h .= '<table style="border-collapse:collapse;width:100%"><tr>';
+    $h .= '<td style="vertical-align:top">';
+    $h .= '<div style="font-size:21px;font-weight:800;color:#0f172a;line-height:1.1">' . e($name) . '</div>';
+    if ($role !== '')  $h .= '<div style="display:inline-block;background:#2563eb;color:#ffffff;font-size:12px;font-weight:600;padding:4px 12px;border-radius:6px;margin:8px 0">' . e($role) . '</div>';
+    if ($email !== '') $h .= '<div style="font-size:14px;margin-top:2px"><a href="mailto:' . e($email) . '" style="color:#0f172a;text-decoration:none">' . e($email) . '</a></div>';
+    if ($phone !== '') $h .= '<div style="font-size:14px;color:#334155">Celular: <a href="tel:' . e($tel) . '" style="color:#334155;text-decoration:none">' . e($phone) . '</a></div>';
+    $h .= '</td>';
+    $h .= '<td style="vertical-align:top;text-align:right;white-space:nowrap;padding-left:14px">';
+    if ($company !== '') $h .= '<div style="font-size:18px;font-weight:800;color:#0f172a;letter-spacing:1.5px">' . e($company) . '</div>';
+    if ($bcorp)          $h .= '<div style="display:inline-block;margin-top:8px;border:1px solid #cbd5e1;border-radius:6px;padding:4px 9px;font-size:10px;font-weight:700;color:#334155;text-align:center;line-height:1.25">Empresa<br>B<br>Certificada</div>';
+    $h .= '</td></tr></table>';
+    if ($bottom) $h .= '<div style="border-top:1px solid #e2e8f0;margin-top:14px;padding-top:10px;font-size:12px;color:#64748b">' . implode(' &nbsp;·&nbsp; ', $bottom) . '</div>';
+    $h .= '</td></tr></table>';
+    return $h;
 }

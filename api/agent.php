@@ -60,6 +60,7 @@ switch ($action) {
                     'smtp_host','smtp_port','smtp_user','smtp_pass','smtp_from_name','smtp_from_email',
                     'imap_host','imap_port','imap_user','imap_pass','whapi_webhook_token','inbox_autoreply',
                     'linkedin_token','linkedin_author_urn','linkedin_version',
+                    'signature_name','signature_role','signature_email','signature_phone','signature_web','signature_linkedin','signature_address','signature_company','signature_bcorp',
                     'agent_auto_mode','agent_daily_limit'];
         foreach ($allowed as $key) {
             if (array_key_exists($key, $d)) {

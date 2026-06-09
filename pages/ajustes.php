@@ -212,6 +212,58 @@
     </div>
   </div>
 
+  <!-- Firma de los correos -->
+  <div class="bg-white rounded-xl ring-1 ring-slate-200 p-6">
+    <h2 class="text-sm font-semibold text-slate-900 mb-1">Firma de los correos</h2>
+    <p class="text-xs text-slate-500 mb-4">Firma HTML (sin imágenes) al pie de cada correo de Daniel. Editá los datos y se actualiza en todos los envíos.</p>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Nombre</label>
+        <input type="text" id="signature_name" value="<?= e(setting('signature_name', 'Daniel Khan')) ?>" class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Cargo</label>
+        <input type="text" id="signature_role" value="<?= e(setting('signature_role', 'Senior Business Developer LATAM')) ?>" class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Email</label>
+        <input type="text" id="signature_email" value="<?= e(setting('signature_email', '')) ?>" class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Teléfono</label>
+        <input type="text" id="signature_phone" value="<?= e(setting('signature_phone', '')) ?>" class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Sitio web</label>
+        <input type="text" id="signature_web" value="<?= e(setting('signature_web', '')) ?>" class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">LinkedIn (texto o URL)</label>
+        <input type="text" id="signature_linkedin" value="<?= e(setting('signature_linkedin', '')) ?>" class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+      </div>
+      <div class="col-span-2">
+        <label class="block text-xs font-medium text-slate-600 mb-1">Dirección</label>
+        <input type="text" id="signature_address" value="<?= e(setting('signature_address', '')) ?>" class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Empresa</label>
+        <input type="text" id="signature_company" value="<?= e(setting('signature_company', 'SISTEL')) ?>" class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Sello "Empresa B"</label>
+        <select id="signature_bcorp" class="w-full rounded-lg ring-1 ring-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500">
+          <option value="1" <?= setting('signature_bcorp', '1') === '1' ? 'selected' : '' ?>>Mostrar</option>
+          <option value="0" <?= setting('signature_bcorp', '1') === '0' ? 'selected' : '' ?>>Ocultar</option>
+        </select>
+      </div>
+    </div>
+    <div class="mt-4">
+      <button onclick="saveGroup('firma')" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition">
+        Guardar
+      </button>
+    </div>
+  </div>
+
   <!-- Agente autónomo -->
   <div class="bg-white rounded-xl ring-1 ring-slate-200 p-6">
     <h2 class="text-sm font-semibold text-slate-900 mb-4">Agente autónomo</h2>
@@ -268,6 +320,7 @@ var groups = {
   smtp:    ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_name', 'smtp_from_email'],
   inbox:   ['imap_host', 'imap_port', 'imap_user', 'imap_pass', 'whapi_webhook_token'],
   linkedin:['linkedin_token', 'linkedin_author_urn', 'linkedin_version'],
+  firma:   ['signature_name','signature_role','signature_email','signature_phone','signature_web','signature_linkedin','signature_address','signature_company','signature_bcorp'],
   agent:   ['agent_daily_limit'],
 };
 
