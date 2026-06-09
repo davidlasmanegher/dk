@@ -85,6 +85,11 @@ function outreach_generate_draft(array $lead, string $channel, string $goal = ''
     if ($hist)    $user .= "\nHISTORIAL RECIENTE (lo más nuevo primero):\n{$hist}\n";
     if ($goal)    $user .= "\nOBJETIVO DE ESTE MENSAJE: {$goal}\n";
     if ($context) $user .= "\nCONTEXTO ADICIONAL: {$context}\n";
+    $company = trim((string)($lead['company'] ?? ''));
+    if ($company !== '') {
+        $user .= "\nPERSONALIZACIÓN OBLIGATORIA: escribí un correo 100% personalizado a {$company}. Nombrá a {$company} y hablá de SU realidad y SUS retos en concreto; NO uses generalidades como \"las organizaciones\" o \"las empresas\".\n";
+    }
+    $user .= "\nFORMATO DEL CUERPO: párrafos cortos en texto natural; podés usar **negrita** para destacar conceptos clave (se convierte a HTML). NO uses viñetas con asteriscos ni encabezados markdown (#).";
     $user .= "\nResponde SOLO con JSON válido, sin texto extra.";
 
     $r = claude_call($system, $user, 1500, 0.7);
@@ -167,12 +172,23 @@ function outreach_channel_rules(string $channel): string {
          . 'Responde en JSON: {"subject":"<asunto>", "body":"<cuerpo sin firma>"}';
 }
 
-/** Envuelve el cuerpo en HTML simple + firma del perfil. */
+/** Envuelve el cuerpo en HTML + firma. Convierte markdown ligero (negritas, párrafos) y elimina asteriscos sueltos. */
 function outreach_email_html(string $body): string {
     $p   = agent_profile();
     $sig = trim((string)($p['signature'] ?? ''));
+
+    $esc = e(trim($body));                                                   // escapar HTML
+    $esc = preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $esc);    // **negrita** -> <strong>
+    $esc = str_replace('*', '', $esc);                                       // quitar asteriscos residuales
+    $blocks = preg_split('/\n\s*\n/', $esc);                                 // párrafos por doble salto
+    $bodyHtml = '';
+    foreach ($blocks as $b) {
+        $b = trim($b);
+        if ($b !== '') $bodyHtml .= '<p style="margin:0 0 14px">' . nl2br($b) . '</p>';
+    }
+
     $html  = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1e293b">';
-    $html .= '<div>' . nl2br(e($body)) . '</div>';
+    $html .= $bodyHtml;
     if ($sig !== '') {
         $html .= '<div style="margin-top:18px;padding-top:12px;border-top:1px solid #e2e8f0;'
                . 'color:#64748b;font-size:13px;white-space:pre-line">' . nl2br(e($sig)) . '</div>';
