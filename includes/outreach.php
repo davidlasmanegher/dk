@@ -189,9 +189,18 @@ function outreach_email_html(string $body): string {
 
     $html  = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1e293b">';
     $html .= $bodyHtml;
-    if ($sig !== '') {
-        $html .= '<div style="margin-top:18px;padding-top:12px;border-top:1px solid #e2e8f0;'
-               . 'color:#64748b;font-size:13px;white-space:pre-line">' . nl2br(e($sig)) . '</div>';
-    }
+    $html .= outreach_signature_html();
     return $html . '</div>';
+}
+
+/** Firma corporativa HTML de Daniel (maquetada, con links, liviana para buena entregabilidad). */
+function outreach_signature_html(): string {
+    return '<table style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:13px;margin-top:22px"><tr><td style="padding-top:14px;border-top:2px solid #2563eb">'
+        . '<div style="font-size:17px;font-weight:700;color:#0f172a">Daniel Khan</div>'
+        . '<div style="display:inline-block;background:#2563eb;color:#ffffff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:5px;margin:5px 0">Senior Business Developer LATAM</div>'
+        . '<div style="margin-top:6px;color:#334155"><a href="mailto:daniel.khan@sistelco.com.mx" style="color:#2563eb;text-decoration:none">daniel.khan@sistelco.com.mx</a>&nbsp; ·&nbsp; <a href="tel:+525598162472" style="color:#334155;text-decoration:none">+52 55 9816 2472</a></div>'
+        . '<div style="margin-top:3px;color:#334155"><a href="https://www.sistelco.com.mx" style="color:#2563eb;text-decoration:none">www.sistelco.com.mx</a>&nbsp; ·&nbsp; <a href="https://www.linkedin.com/company/sistel-m%C3%A9xico/" style="color:#2563eb;text-decoration:none">LinkedIn: sistel-méxico</a></div>'
+        . '<div style="margin-top:4px;color:#64748b;font-size:12px">Bosque Real 8, Depto 604, Huixquilucan, Estado de México, C.P. 52770</div>'
+        . '<div style="margin-top:7px;font-size:12px;color:#0f172a;font-weight:700;letter-spacing:.5px">SISTEL&nbsp; <span style="font-weight:400;color:#94a3b8">| Empresa B Certificada</span></div>'
+        . '</td></tr></table>';
 }
