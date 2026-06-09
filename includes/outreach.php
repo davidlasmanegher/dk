@@ -211,7 +211,7 @@ function outreach_email_html(string $body): string {
     return $html . '</div>';
 }
 
-/** Firma corporativa de Daniel: HTML con estilos en línea (look de la tarjeta, sin foto). Parametrizable en Ajustes. */
+/** Firma corporativa de Daniel: tarjeta HTML inline con íconos (sin foto). Parametrizable en Ajustes. */
 function outreach_signature_html(): string {
     $name     = trim((string)setting('signature_name', 'Daniel Khan'));
     $role     = trim((string)setting('signature_role', 'Senior Business Developer LATAM'));
@@ -219,39 +219,43 @@ function outreach_signature_html(): string {
     $phone    = trim((string)setting('signature_phone', '+52 55 9816 2472'));
     $web      = trim((string)setting('signature_web', 'www.sistelco.com.mx'));
     $linkedin = trim((string)setting('signature_linkedin', 'sistel-méxico'));
-    $addr     = trim((string)setting('signature_address', 'Bosque Real 8, Depto 604, Huixquilucan, Estado de México, C.P. 52770'));
+    $addr     = trim((string)setting('signature_address', 'Bosque Real 8, Depto 604, Huixquilucan, Edo. de México, C.P. 52770'));
     $company  = trim((string)setting('signature_company', 'SISTEL'));
     $bcorp    = (string)setting('signature_bcorp', '1') === '1';
 
     $tel    = preg_replace('/[^\d+]/', '', $phone);
     $webUrl = (stripos($web, 'http') === 0) ? $web : 'https://' . $web;
     $liUrl  = (stripos($linkedin, 'http') === 0) ? $linkedin : ('https://www.linkedin.com/company/' . rawurlencode($linkedin));
+    $F = "'Helvetica Neue',Helvetica,Arial,sans-serif";
 
-    $bottom = [];
-    if ($web !== '')      $bottom[] = '<a href="' . e($webUrl) . '" style="color:#2563eb;text-decoration:none">' . e($web) . '</a>';
-    if ($linkedin !== '') $bottom[] = '<a href="' . e($liUrl) . '" style="color:#2563eb;text-decoration:none">' . e($linkedin) . '</a>';
-    if ($addr !== '')     $bottom[] = '<span style="color:#64748b">' . e($addr) . '</span>';
+    $svgMail = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1f47e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m2 7 10 6 10-6"></path></svg>';
+    $svgTel  = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1f47e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>';
+    $svgWeb  = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1f47e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>';
+    $svgLi   = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="#1f47e6"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-.95 1.83-1.95 3.76-1.95 4.02 0 4.76 2.5 4.76 5.76V21h-4v-5.1c0-1.22-.02-2.8-1.9-2.8-1.9 0-2.2 1.34-2.2 2.72V21H9z"></path></svg>';
+    $svgMap  = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>';
 
-    $h  = '<table style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;margin-top:24px;max-width:560px;width:100%"><tr>';
-    $h .= '<td style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px">';
-    $h .= '<table style="border-collapse:collapse;width:100%"><tr>';
-    $h .= '<td style="vertical-align:top">';
-    $h .= '<div style="font-size:21px;font-weight:800;color:#0f172a;line-height:1.1">' . e($name) . '</div>';
-    if ($role !== '')  $h .= '<div style="display:inline-block;background:#2563eb;color:#ffffff;font-size:12px;font-weight:600;padding:4px 12px;border-radius:6px;margin:8px 0">' . e($role) . '</div>';
-    if ($email !== '') $h .= '<div style="font-size:14px;margin-top:2px"><a href="mailto:' . e($email) . '" style="color:#0f172a;text-decoration:none">' . e($email) . '</a></div>';
-    if ($phone !== '') $h .= '<div style="font-size:14px;color:#334155">Celular: <a href="tel:' . e($tel) . '" style="color:#334155;text-decoration:none">' . e($phone) . '</a></div>';
-    $h .= '</td>';
-    $h .= '<td style="vertical-align:top;text-align:right;white-space:nowrap;padding-left:14px">';
-    if ($company !== '') $h .= '<div style="font-size:18px;font-weight:800;color:#0f172a;letter-spacing:1.5px">' . e($company) . '</div>';
-    if ($bcorp)          $h .= '<div style="display:inline-block;margin-top:8px;border:1px solid #cbd5e1;border-radius:6px;padding:4px 9px;font-size:10px;font-weight:700;color:#334155;text-align:center;line-height:1.25">Empresa<br>B<br>Certificada</div>';
+    $h  = '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;margin-top:24px"><tr><td style="padding:0">';
+    $h .= '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;width:560px;max-width:560px;background:#ffffff;border:1px solid #e6e8ef;border-radius:16px;font-family:' . $F . '"><tr><td style="padding:28px 32px 22px 32px">';
+    $h .= '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;width:100%"><tr>';
+    $h .= '<td valign="top" style="vertical-align:top">';
+    $h .= '<div style="font-size:27px;line-height:1.05;font-weight:800;letter-spacing:-0.6px;color:#0f172a;font-family:' . $F . '">' . e($name) . '</div>';
+    if ($role !== '') $h .= '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:separate;margin-top:13px"><tr><td style="background:#1f47e6;border-radius:8px;padding:8px 15px;font-size:13.5px;font-weight:700;color:#ffffff;font-family:' . $F . ';white-space:nowrap;letter-spacing:.2px">' . e($role) . '</td></tr></table>';
+    $h .= '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;margin-top:18px">';
+    if ($email !== '') $h .= '<tr><td style="padding:0 9px 0 0;vertical-align:middle;line-height:0">' . $svgMail . '</td><td style="padding:0;vertical-align:middle"><a href="mailto:' . e($email) . '" style="font-size:14.5px;color:#0f172a;text-decoration:none;font-family:' . $F . '">' . e($email) . '</a></td></tr>';
+    if ($email !== '' && $phone !== '') $h .= '<tr><td colspan="2" style="height:8px;line-height:8px;font-size:0">&nbsp;</td></tr>';
+    if ($phone !== '') $h .= '<tr><td style="padding:0 9px 0 0;vertical-align:middle;line-height:0">' . $svgTel . '</td><td style="padding:0;vertical-align:middle"><a href="tel:' . e($tel) . '" style="font-size:14.5px;color:#0f172a;text-decoration:none;font-family:' . $F . '">' . e($phone) . '</a></td></tr>';
+    $h .= '</table></td>';
+    $h .= '<td valign="top" align="right" style="vertical-align:top;text-align:right">';
+    if ($company !== '') $h .= '<div style="font-size:31px;font-weight:700;letter-spacing:1px;color:#11151c;font-family:\'Arial Rounded MT Bold\',\'Century Gothic\',Futura,Arial,sans-serif">' . e($company) . '</div>';
+    if ($bcorp) $h .= '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;margin-top:16px;margin-left:auto"><tr><td align="center" style="text-align:center;font-family:' . $F . ';color:#11151c"><div style="font-size:9px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;line-height:1.3">Empresa</div><div style="font-size:15px;font-weight:700;color:#11151c;line-height:1.2;margin:1px 0">B</div><div style="font-size:9px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;line-height:1.3">Certificada</div></td></tr></table>';
     $h .= '</td></tr></table>';
-    if ($bottom) $h .= '<div style="border-top:1px solid #e2e8f0;margin-top:14px;padding-top:10px;font-size:12px;color:#64748b">' . implode(' &nbsp;·&nbsp; ', $bottom) . '</div>';
-    if ($bcorp) {
-        $h .= '<div style="margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;line-height:1.5;color:#475569">'
-            . '<span style="font-weight:700;color:#0f172a">Orgullosamente Empresa B Certificada</span><br>'
-            . 'Creemos en el poder de las Empresas para generar Bienestar y Prosperidad Colectiva'
-            . '</div>';
-    }
-    $h .= '</td></tr></table>';
+    $h .= '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;width:100%;margin-top:22px"><tr><td style="border-top:1px solid #ecedf2;font-size:0;line-height:0;height:1px">&nbsp;</td></tr></table>';
+    $h .= '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;width:100%;margin-top:18px"><tr>';
+    if ($web !== '')      $h .= '<td style="padding:0 8px 0 0;vertical-align:middle;line-height:0">' . $svgWeb . '</td><td style="padding:0 14px 0 0;vertical-align:middle;white-space:nowrap"><a href="' . e($webUrl) . '" style="font-size:13px;color:#1f47e6;text-decoration:none;font-weight:600;font-family:' . $F . '">' . e($web) . '</a></td>';
+    if ($linkedin !== '') $h .= '<td style="padding:0 8px 0 0;vertical-align:middle;line-height:0">' . $svgLi . '</td><td style="padding:0 14px 0 0;vertical-align:middle;white-space:nowrap"><a href="' . e($liUrl) . '" style="font-size:13px;color:#1f47e6;text-decoration:none;font-weight:600;font-family:' . $F . '">' . e($linkedin) . '</a></td>';
+    if ($addr !== '')     $h .= '<td style="padding:0 8px 0 0;vertical-align:middle;line-height:0">' . $svgMap . '</td><td style="vertical-align:middle"><span style="font-size:12.5px;color:#64748b;line-height:1.4;font-family:' . $F . '">' . e($addr) . '</span></td>';
+    $h .= '</tr></table>';
+    if ($bcorp) $h .= '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;width:100%;margin-top:16px"><tr><td style="border-top:1px solid #ecedf2;padding-top:12px;font-size:11.5px;line-height:1.5;color:#475569;font-family:' . $F . '"><span style="font-weight:700;color:#0f172a">Orgullosamente Empresa B Certificada</span><br>Creemos en el poder de las Empresas para generar Bienestar y Prosperidad Colectiva</td></tr></table>';
+    $h .= '</td></tr></table></td></tr></table>';
     return $h;
 }
