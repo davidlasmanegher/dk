@@ -39,7 +39,7 @@ try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS agent_profile (
         id                  INT AUTO_INCREMENT PRIMARY KEY,
         name                VARCHAR(100) DEFAULT 'Daniel Khan',
-        role                VARCHAR(150) DEFAULT 'Director de Desarrollo de Negocios LATAM',
+        role                VARCHAR(150) DEFAULT 'Consultor Sr. en Aprendizaje Corporativo',
         company             VARCHAR(100) DEFAULT 'SISTEL',
         target_market       TEXT,
         value_proposition   TEXT,
@@ -285,7 +285,7 @@ try {
         'embeddings_model'     => 'text-embedding-3-small',
         'campaign_max_per_company' => '2',
         'signature_name'       => 'Daniel Khan',
-        'signature_role'       => 'Senior Business Consultant - LATAM',
+        'signature_role'       => 'Consultor Sr. en Aprendizaje Corporativo',
         'signature_email'      => 'daniel.khan@sistelco.com.mx',
         'signature_phone'      => '+52 55 9816 2472',
         'signature_web'        => 'www.sistelco.com.mx',
@@ -302,7 +302,7 @@ try {
     $pdo->exec("INSERT IGNORE INTO agent_profile (id, name, role, company, target_market, value_proposition, communication_style, objections_playbook, market_focus) VALUES (
         1,
         'Daniel Khan',
-        'Director de Desarrollo de Negocios LATAM',
+        'Consultor Sr. en Aprendizaje Corporativo',
         'SISTEL',
         'Directores y Gerentes de Recursos Humanos, Capacitación, Talento y Desarrollo Organizacional en empresas medianas y grandes del sector industrial, manufactura, retail, servicios financieros y tecnología en México. Organizaciones con más de 200 empleados que buscan profesionalizar su función de aprendizaje.',
         'SISTEL diseña, implementa y opera Universidades Corporativas y ecosistemas de aprendizaje a medida para empresas en LATAM. No somos un proveedor de cursos: somos el socio estratégico que convierte la capacitación en una ventaja competitiva real. Nuestra metodología 6E+IA (Explorar, Estructurar, Ejecutar, Enamorar, Enfocar, Evolucionar) y nuestra plataforma SENSEI permiten medir el impacto del aprendizaje en resultados de negocio.',

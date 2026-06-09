@@ -238,7 +238,7 @@ function agent_profile(): array {
 function agent_identity_block(): string {
     $p       = agent_profile();
     $name    = $p['name']         ?? 'Daniel Khan';
-    $role    = $p['role']         ?? 'Director de Desarrollo de Negocios LATAM';
+    $role    = $p['role']         ?? 'Consultor Sr. en Aprendizaje Corporativo';
     $company = $p['company']      ?? 'SISTEL';
     $market  = $p['market_focus'] ?? 'México';
     $target  = trim((string)($p['target_market']       ?? ''));

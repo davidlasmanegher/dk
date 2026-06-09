@@ -214,7 +214,7 @@ function outreach_email_html(string $body): string {
 /** Firma corporativa de Daniel: tarjeta HTML inline con íconos (sin foto). Parametrizable en Ajustes. */
 function outreach_signature_html(): string {
     $name     = trim((string)setting('signature_name', 'Daniel Khan'));
-    $role     = trim((string)setting('signature_role', 'Senior Business Developer LATAM'));
+    $role     = trim((string)setting('signature_role', 'Consultor Sr. en Aprendizaje Corporativo'));
     $email    = trim((string)setting('signature_email', 'daniel.khan@sistelco.com.mx'));
     $phone    = trim((string)setting('signature_phone', '+52 55 9816 2472'));
     $web      = trim((string)setting('signature_web', 'www.sistelco.com.mx'));
