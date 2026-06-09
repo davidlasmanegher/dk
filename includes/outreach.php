@@ -17,6 +17,24 @@ function outreach_norm_channel(string $c): string {
     return in_array($c, ['email', 'whatsapp'], true) ? $c : 'email';
 }
 
+/** Nombre de empresa "presentable": quita sufijos legales y "México", y deja Primera Mayúscula. */
+function company_display(string $company): string {
+    $c = trim($company);
+    if ($c === '') return 'tu empresa';
+    $c = preg_replace('/\b(S\.?A\.?P\.?I\.?(\s*DE\s*C\.?V\.?)?|S\.?A\.?(\s*DE\s*C\.?V\.?)?|S\.?\s*DE\s*R\.?L\.?(\s*DE\s*C\.?V\.?)?|S\.?C\.?|S\.?A\.?B\.?)\b/iu', ' ', $c);
+    $c = preg_replace('/\bDE\s+M[ÉE]XICO\b/iu', ' ', $c);
+    $c = preg_replace('/\bM[ÉE]XICO\b/iu', ' ', $c);
+    $c = preg_replace('/[.,]+/', ' ', $c);
+    $c = trim(preg_replace('/\s+/', ' ', $c));
+    if ($c === '') return 'tu empresa';
+    $out = [];
+    foreach (explode(' ', mb_strtolower($c, 'UTF-8')) as $w) {
+        if ($w === '') continue;
+        $out[] = mb_strtoupper(mb_substr($w, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($w, 1, null, 'UTF-8');
+    }
+    return implode(' ', $out);
+}
+
 /**
  * Guardrail de prueba social (por código, no por prompt): si el texto enumera
  * "empresas/clientes como X, Y, Z" y alguno NO está en la lista aprobada (setting
@@ -75,7 +93,7 @@ function outreach_generate_draft(array $lead, string $channel, string $goal = ''
     $user  = "Redacta el mensaje para este prospecto.\n\nPROSPECTO:\n";
     $user .= "- Nombre: {$leadName}\n";
     $user .= "- Cargo: "     . ($lead['role']     ?: '—') . "\n";
-    $user .= "- Empresa: "   . ($lead['company']  ?: '—') . "\n";
+    $user .= "- Empresa: "   . company_display((string)($lead['company'] ?? '')) . "\n";
     $user .= "- Industria: " . ($lead['industry'] ?: '—') . "\n";
     $user .= "- Ubicación: " . trim(($lead['city'] ?? '') . ', ' . ($lead['country'] ?? ''), ', ') . "\n";
     $user .= "- Etapa: "     . ($lead['stage']    ?: '—') . "\n";
@@ -85,11 +103,11 @@ function outreach_generate_draft(array $lead, string $channel, string $goal = ''
     if ($hist)    $user .= "\nHISTORIAL RECIENTE (lo más nuevo primero):\n{$hist}\n";
     if ($goal)    $user .= "\nOBJETIVO DE ESTE MENSAJE: {$goal}\n";
     if ($context) $user .= "\nCONTEXTO ADICIONAL: {$context}\n";
-    $company = trim((string)($lead['company'] ?? ''));
-    if ($company !== '') {
-        $user .= "\nPERSONALIZACIÓN OBLIGATORIA: escribí un correo 100% personalizado a {$company}. Nombrá a {$company} y hablá de SU realidad y SUS retos en concreto; NO uses generalidades como \"las organizaciones\" o \"las empresas\".\n";
+    $company = company_display((string)($lead['company'] ?? ''));
+    if ($company !== '' && $company !== 'tu empresa') {
+        $user .= "\nPERSONALIZACIÓN OBLIGATORIA: escribí un correo 100% personalizado a {$company}. Referite a la empresa EXACTAMENTE como \"{$company}\" (tal cual, sin MAYÚSCULAS sostenidas, sin agregar \"México\" ni sufijos legales como S.A. o de C.V.). Hablá de SU realidad y SUS retos concretos; NADA de generalidades como \"las organizaciones\".\n";
     }
-    $user .= "\nFORMATO DEL CUERPO: párrafos cortos en texto natural; podés usar **negrita** para destacar conceptos clave (se convierte a HTML). NO uses viñetas con asteriscos ni encabezados markdown (#).";
+    $user .= "\nFORMATO DEL CUERPO: párrafos cortos en texto corrido y natural, como un correo personal escrito a mano por una persona. NO uses negritas, NI viñetas, NI encabezados, NI el nombre de la empresa resaltado: todo eso hace que el correo parezca automatizado, de plantilla o de una IA. Debe leerse orgánico, como si Daniel lo hubiera escrito él mismo.";
     $user .= "\nResponde SOLO con JSON válido, sin texto extra.";
 
     $r = claude_call($system, $user, 1500, 0.7);
@@ -197,8 +215,8 @@ function outreach_email_html(string $body): string {
 function outreach_signature_html(): string {
     return '<div style="margin-top:22px">'
         . '<a href="https://www.sistelco.com.mx" target="_blank" style="text-decoration:none">'
-        . '<img src="https://www.sisteltools.com/dk/firma-DK-web.png" '
-        . 'alt="Daniel Khan · Senior Business Developer LATAM · SISTEL · daniel.khan@sistelco.com.mx · +52 55 9816 2472 · www.sistelco.com.mx" '
+        . '<img src="https://www.sisteltools.com/dk/firma-DK2-web.png" '
+        . 'alt="Daniel Khan · SISTEL · daniel.khan@sistelco.com.mx · +52 55 9816 2472 · www.sistelco.com.mx" '
         . 'width="600" style="display:block;max-width:600px;width:100%;height:auto;border:0">'
         . '</a></div>';
 }
