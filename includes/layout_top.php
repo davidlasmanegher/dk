@@ -25,8 +25,22 @@ $key_ok = has_api_key();
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="csrf-token" content="<?= e(generate_csrf_token()) ?>">
+<!-- PWA / instalable en iPhone y iPad -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f47e6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Daniel Khan">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="apple-touch-icon" sizes="152x152" href="assets/icon-152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="assets/icon-167.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
 <title><?= e($page_title) ?> &middot; DK &middot; Agente SISTEL</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,6 +54,14 @@ $key_ok = has_api_key();
   #mainWrap { transition: margin-left .2s ease; }
   @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
   .spin { animation: spin 1s linear infinite; }
+  /* PWA / iOS: respetar notch y home indicator, look más nativo */
+  @supports (padding: max(0px)) {
+    body { padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+  }
+  html { -webkit-text-size-adjust: 100%; }
+  @media (display-mode: standalone) {
+    body { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
+  }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
