@@ -140,7 +140,7 @@ function inbox_ingest(string $channel, string $from, string $body, string $exter
         $canal = ($channel === 'whatsapp') ? 'WhatsApp' : 'correo';
         $n  = "📥 " . $who . ($co ? " · " . $co : '') . " respondió por " . $canal . ":\n\"" . mb_substr($body, 0, 220) . "\"";
         $n .= $autoReplied ? "\n\n🤖 Daniel ya le respondió automáticamente." : "\n\n📝 Respuesta sugerida lista para aprobar en la bandeja.";
-        @notify_admins($n);
+        @notify_admins($n, $from);
     }
     return ['ok' => true, 'id' => $newId, 'lead_id' => $lead_id, 'auto_replied' => $autoReplied];
 }

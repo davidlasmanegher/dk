@@ -90,17 +90,20 @@ function whapi_send_text(string $phone, string $text): array {
  * Best-effort: no rompe el flujo si falla.
  * @return array{sent:int, total:int, error:string}
  */
-function notify_admins(string $text): array {
+function notify_admins(string $text, string $excludePhone = ''): array {
     try {
         $admins = db()->query("SELECT name, phone FROM users WHERE notify = 1 AND phone <> ''")->fetchAll();
     } catch (Throwable $e) {
         return ['sent' => 0, 'total' => 0, 'error' => 'falta columna phone/notify'];
     }
     if (!whapi_available()) return ['sent' => 0, 'total' => count($admins), 'error' => 'whapi no disponible'];
-    $sent = 0;
+    $exTail = substr(preg_replace('/\D+/', '', $excludePhone), -10);   // no auto-notificar al remitente
+    $sent = 0; $tot = 0;
     foreach ($admins as $a) {
+        if ($exTail !== '' && substr(preg_replace('/\D+/', '', (string)$a['phone']), -10) === $exTail) continue;
+        $tot++;
         $r = whapi_send_text((string)$a['phone'], $text);
         if (!empty($r['ok'])) $sent++;
     }
-    return ['sent' => $sent, 'total' => count($admins), 'error' => ''];
+    return ['sent' => $sent, 'total' => $tot, 'error' => ''];
 }
