@@ -44,17 +44,38 @@ function inbox_generate_reply(array $lead, string $incoming, string $channel): a
     if (!claude_available()) return ['ok' => false, 'error' => 'Falta API key de Claude.', 'reply' => '', 'subject' => ''];
     $channel = outreach_norm_channel($channel);
     $system  = agent_identity_block() . "\n\n" . outreach_channel_rules($channel)
-        . "\n\nEstás RESPONDIENDO un mensaje entrante de un prospecto. Si trae una objeción, aplica la regla de oro "
-        . "(validar, reinterpretar, conectar con valor de negocio, proponer un paso suave sin compromiso). Sé breve, humano y útil.";
-    $kctx = knowledge_context($incoming . ' ' . ($lead['company'] ?? ''), 4);
+        . "\n\nESTÁS EN UNA CONVERSACIÓN REAL respondiendo a un prospecto que te escribió. Sos Daniel Khan, una persona de carne y hueso — NO un bot ni un formulario. "
+        . "Tu objetivo comercial: construir confianza, entender la necesidad real, aportar valor concreto y, cuando haya interés, proponer un paso suave (una llamada breve, mostrar un caso, agendar un espacio). "
+        . "Si el mensaje trae una objeción, aplicá la regla de oro: validar, reinterpretar, conectar con valor de negocio y proponer un paso sin compromiso. "
+        . "Escribí breve, cálido y humano, como en un chat real (no como un mail corporativo). Continuá el hilo con coherencia; no repitas lo que ya dijiste.\n"
+        . "REGLAS DURAS DE SEGURIDAD COMERCIAL: NUNCA inventes precios, plazos, cifras, funcionalidades, integraciones ni casos de éxito. "
+        . "Si no sabés algo, está fuera de tu alcance o te piden una cotización/condiciones, NO lo inventes: decí con naturalidad que lo confirmás con el equipo y le escribís a la brevedad. "
+        . "No prometas nada que no puedas cumplir ni cierres condiciones comerciales por este canal.";
+    // RAG: corpus de conocimiento del autor (documentos, casos, metodología 6E, SENSEI...)
+    $kctx = knowledge_context($incoming . ' ' . ($lead['company'] ?? '') . ' ' . ($lead['industry'] ?? ''), 6);
     if ($kctx !== '') $system .= "\n\n" . $kctx;
     $lc = learning_context(3); if ($lc !== '') $system .= "\n\n" . $lc;
     $leadName = trim(($lead['first_name'] ?? '') . ' ' . ($lead['last_name'] ?? ''));
-    $hist = outreach_lead_history((int)$lead['id'], 8);
-    $user = "PROSPECTO: {$leadName} · " . ($lead['role'] ?: '—') . " · " . ($lead['company'] ?: '—') . "\n";
+
+    // Ficha CRM del prospecto: contexto comercial completo
+    $ctx = "FICHA DEL PROSPECTO (contexto interno, NO lo recites):\n- Nombre: {$leadName}\n- Cargo: " . ($lead['role'] ?: '—')
+         . "\n- Empresa: " . ($lead['company'] ?: '—') . "\n- Sector: " . ($lead['industry'] ?: '—')
+         . "\n- Etapa en el pipeline: " . ($lead['stage'] ?: '—');
+    if (!empty($lead['notes'])) $ctx .= "\n- Notas internas: " . mb_substr((string)$lead['notes'], 0, 400);
+    try {
+        $cq = db()->prepare("SELECT c.name, c.objective FROM campaign_leads cl JOIN campaigns c ON c.id = cl.campaign_id WHERE cl.lead_id = ? ORDER BY cl.id DESC LIMIT 1");
+        $cq->execute([(int)$lead['id']]);
+        if ($cr = $cq->fetch()) {
+            $ctx .= "\n- Campaña: " . $cr['name'];
+            if (!empty($cr['objective'])) $ctx .= "\n- Foco del primer contacto: " . mb_substr((string)$cr['objective'], 0, 500);
+        }
+    } catch (Throwable $e) {}
+
+    $hist = outreach_lead_history((int)$lead['id'], 10);
+    $user = $ctx . "\n";
     if ($hist) $user .= "\nHISTORIAL DE LA CONVERSACIÓN:\n{$hist}\n";
     $user .= "\nMENSAJE ENTRANTE DEL PROSPECTO:\n\"{$incoming}\"\n\n"
-        . "Redacta la mejor respuesta en nombre de Daniel. Responde SOLO con JSON: {\"subject\":\"...\",\"body\":\"...\"}";
+        . "Redactá la mejor respuesta en nombre de Daniel, coherente con el historial y el contexto. Respondé SOLO con JSON: {\"subject\":\"...\",\"body\":\"...\"}";
     $r = claude_call($system, $user, 1200, 0.7);
     if (!$r['ok']) return ['ok' => false, 'error' => $r['error'], 'reply' => '', 'subject' => ''];
     $p = extract_json($r['text']);
@@ -100,7 +121,15 @@ function inbox_ingest(string $channel, string $from, string $body, string $exter
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')"
     );
     $ins->execute([$lead_id, $channel, ($externalId ?: null), $from, $subjOut, $body, $draft, $hasObj]);
-    return ['ok' => true, 'id' => (int)$pdo->lastInsertId(), 'lead_id' => $lead_id];
+    $newId = (int)$pdo->lastInsertId();
+
+    // AUTO-REPLY autónomo: si está activado y hay un borrador válido para un contacto
+    // identificado, Daniel responde solo (sin esperar aprobación). Los desconocidos quedan pendientes.
+    if ($lead_id && $draft !== '' && (string)setting('inbox_autoreply', '0') === '1') {
+        $ar = inbox_approve($newId);
+        return ['ok' => true, 'id' => $newId, 'lead_id' => $lead_id, 'auto_replied' => !empty($ar['ok']), 'auto_error' => ($ar['error'] ?? '')];
+    }
+    return ['ok' => true, 'id' => $newId, 'lead_id' => $lead_id];
 }
 
 /** Aprueba y envía la respuesta (con edición opcional del cuerpo). */
