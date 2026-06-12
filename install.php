@@ -254,6 +254,8 @@ try {
         "ALTER TABLE agent_profile ADD COLUMN persona LONGTEXT NULL AFTER communication_style",
         "ALTER TABLE users ADD COLUMN phone VARCHAR(30) NULL AFTER name",
         "ALTER TABLE users ADD COLUMN notify TINYINT(1) DEFAULT 1 AFTER phone",
+        "ALTER TABLE chat_messages ADD COLUMN user_id INT NULL AFTER id",
+        "ALTER TABLE chat_messages ADD INDEX idx_chat_user (user_id)",
     ];
     foreach ($migrations as $m) {
         try { $pdo->exec($m); } catch (Throwable $e) { /* ya existe — ignorar */ }

@@ -15,6 +15,7 @@ verify_csrf_token();
 require_auth_api();
 @set_time_limit(0);
 
+$uid    = (int)(current_user()['id'] ?? 0);   // cada admin tiene su propio chat privado
 $d      = json_in();
 $action = $d['action'] ?? '';
 
@@ -171,28 +172,32 @@ function chat_system(): string {
 switch ($action) {
 
     case 'history': {
-        $rows = db()->query("SELECT role, content, created_at FROM chat_messages ORDER BY id DESC LIMIT 40")->fetchAll();
+        $st = db()->prepare("SELECT role, content, created_at FROM chat_messages WHERE user_id = ? ORDER BY id DESC LIMIT 40");
+        $st->execute([$uid]);
+        $rows = $st->fetchAll();
         json_out(['ok' => true, 'messages' => array_reverse($rows)]);
     }
 
     case 'clear': {
-        db()->exec("DELETE FROM chat_messages");
+        db()->prepare("DELETE FROM chat_messages WHERE user_id = ?")->execute([$uid]);
         json_out(['ok' => true]);
     }
 
     case 'send': {
         $msg = trim((string)($d['message'] ?? ''));
         if ($msg === '') json_out(['ok' => false, 'error' => 'Mensaje vacío.'], 400);
-        db()->prepare("INSERT INTO chat_messages (role, content) VALUES ('user', ?)")->execute([$msg]);
+        db()->prepare("INSERT INTO chat_messages (role, content, user_id) VALUES ('user', ?, ?)")->execute([$msg, $uid]);
 
         if (!claude_available()) {
             $err = 'Configura tu API key de Claude en Ajustes para que pueda ayudarte.';
-            db()->prepare("INSERT INTO chat_messages (role, content) VALUES ('assistant', ?)")->execute([$err]);
+            db()->prepare("INSERT INTO chat_messages (role, content, user_id) VALUES ('assistant', ?, ?)")->execute([$err, $uid]);
             json_out(['ok' => true, 'reply' => $err, 'steps' => []]);
         }
 
         // Reconstruir la conversación (últimos turnos).
-        $hist = db()->query("SELECT role, content FROM chat_messages ORDER BY id DESC LIMIT 16")->fetchAll();
+        $hst = db()->prepare("SELECT role, content FROM chat_messages WHERE user_id = ? ORDER BY id DESC LIMIT 16");
+        $hst->execute([$uid]);
+        $hist = $hst->fetchAll();
         $hist = array_reverse($hist);
         $messages = [];
         foreach ($hist as $h) {
@@ -206,7 +211,7 @@ switch ($action) {
 
         $reply = $r['text'] !== '' ? $r['text'] : 'Listo.';
         $meta  = json_encode(['steps' => $r['steps']], JSON_UNESCAPED_UNICODE);
-        db()->prepare("INSERT INTO chat_messages (role, content, meta) VALUES ('assistant', ?, ?)")->execute([$reply, $meta]);
+        db()->prepare("INSERT INTO chat_messages (role, content, meta, user_id) VALUES ('assistant', ?, ?, ?)")->execute([$reply, $meta, $uid]);
         json_out(['ok' => true, 'reply' => $reply, 'steps' => $r['steps']]);
     }
 
