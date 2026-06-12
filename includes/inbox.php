@@ -50,7 +50,9 @@ function inbox_generate_reply(array $lead, string $incoming, string $channel): a
         . "Escribí breve, cálido y humano, como en un chat real (no como un mail corporativo). Continuá el hilo con coherencia; no repitas lo que ya dijiste.\n"
         . "REGLAS DURAS DE SEGURIDAD COMERCIAL: NUNCA inventes precios, plazos, cifras, funcionalidades, integraciones ni casos de éxito. "
         . "Si no sabés algo, está fuera de tu alcance o te piden una cotización/condiciones, NO lo inventes: decí con naturalidad que lo confirmás con el equipo y le escribís a la brevedad. "
-        . "No prometas nada que no puedas cumplir ni cierres condiciones comerciales por este canal.";
+        . "No prometas nada que no puedas cumplir ni cierres condiciones comerciales por este canal. "
+        . "Podés NOMBRAR clientes de la lista de prueba social, pero NO inventes qué proyecto específico hicimos con cada uno ni resultados o cifras; si no tenés ese detalle en el contexto, hablá en general (el tipo de reto y el enfoque), sin afirmar entregables concretos. "
+        . "NUNCA uses las muletillas \"¿te late?\" ni \"¿le late?\".";
     // RAG: corpus de conocimiento del autor (documentos, casos, metodología 6E, SENSEI...)
     $kctx = knowledge_context($incoming . ' ' . ($lead['company'] ?? '') . ' ' . ($lead['industry'] ?? ''), 6);
     if ($kctx !== '') $system .= "\n\n" . $kctx;
@@ -81,7 +83,8 @@ function inbox_generate_reply(array $lead, string $incoming, string $channel): a
     $p = extract_json($r['text']);
     $body = is_array($p) ? (string)($p['body'] ?? '') : trim($r['text']);
     $subj = is_array($p) ? (string)($p['subject'] ?? '') : '';
-    return ['ok' => true, 'reply' => scrub_social_proof($body), 'subject' => scrub_social_proof($subj), 'error' => ''];
+    $reply = preg_replace('/\b(te|le)\s+late\b/iu', 'te interesa', scrub_social_proof($body));
+    return ['ok' => true, 'reply' => $reply, 'subject' => scrub_social_proof($subj), 'error' => ''];
 }
 
 /**
