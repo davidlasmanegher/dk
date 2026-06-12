@@ -126,13 +126,23 @@ function inbox_ingest(string $channel, string $from, string $body, string $exter
     $ins->execute([$lead_id, $channel, ($externalId ?: null), $from, $subjOut, $body, $draft, $hasObj]);
     $newId = (int)$pdo->lastInsertId();
 
-    // AUTO-REPLY autónomo: si está activado y hay un borrador válido para un contacto
-    // identificado, Daniel responde solo (sin esperar aprobación). Los desconocidos quedan pendientes.
+    // AUTO-REPLY autónomo: si está activado y hay un borrador válido para un contacto identificado.
+    $autoReplied = false;
     if ($lead_id && $draft !== '' && (string)setting('inbox_autoreply', '0') === '1') {
         $ar = inbox_approve($newId);
-        return ['ok' => true, 'id' => $newId, 'lead_id' => $lead_id, 'auto_replied' => !empty($ar['ok']), 'auto_error' => ($ar['error'] ?? '')];
+        $autoReplied = !empty($ar['ok']);
     }
-    return ['ok' => true, 'id' => $newId, 'lead_id' => $lead_id];
+
+    // NOTIFICAR a los administradores que un prospecto identificado respondió.
+    if ($lead_id && function_exists('notify_admins')) {
+        $who   = trim(($lead['first_name'] ?? '') . ' ' . ($lead['last_name'] ?? '')) ?: $from;
+        $co    = trim((string)($lead['company'] ?? ''));
+        $canal = ($channel === 'whatsapp') ? 'WhatsApp' : 'correo';
+        $n  = "📥 " . $who . ($co ? " · " . $co : '') . " respondió por " . $canal . ":\n\"" . mb_substr($body, 0, 220) . "\"";
+        $n .= $autoReplied ? "\n\n🤖 Daniel ya le respondió automáticamente." : "\n\n📝 Respuesta sugerida lista para aprobar en la bandeja.";
+        @notify_admins($n);
+    }
+    return ['ok' => true, 'id' => $newId, 'lead_id' => $lead_id, 'auto_replied' => $autoReplied];
 }
 
 /** Aprueba y envía la respuesta (con edición opcional del cuerpo). */

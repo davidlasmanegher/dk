@@ -84,3 +84,23 @@ function whapi_send_text(string $phone, string $text): array {
     $msgId = $r['data']['message']['id'] ?? $r['data']['id'] ?? '';
     return ['ok' => true, 'message_id' => (string)$msgId, 'error' => ''];
 }
+
+/**
+ * Notifica por WhatsApp a los administradores (users con notify=1 y teléfono cargado).
+ * Best-effort: no rompe el flujo si falla.
+ * @return array{sent:int, total:int, error:string}
+ */
+function notify_admins(string $text): array {
+    try {
+        $admins = db()->query("SELECT name, phone FROM users WHERE notify = 1 AND phone <> ''")->fetchAll();
+    } catch (Throwable $e) {
+        return ['sent' => 0, 'total' => 0, 'error' => 'falta columna phone/notify'];
+    }
+    if (!whapi_available()) return ['sent' => 0, 'total' => count($admins), 'error' => 'whapi no disponible'];
+    $sent = 0;
+    foreach ($admins as $a) {
+        $r = whapi_send_text((string)$a['phone'], $text);
+        if (!empty($r['ok'])) $sent++;
+    }
+    return ['sent' => $sent, 'total' => count($admins), 'error' => ''];
+}
