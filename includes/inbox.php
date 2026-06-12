@@ -87,6 +87,46 @@ function inbox_generate_reply(array $lead, string $incoming, string $channel): a
     return ['ok' => true, 'reply' => $reply, 'subject' => scrub_social_proof($subj), 'error' => ''];
 }
 
+/** ¿El remitente es un administrador del equipo? Lo identifica por su teléfono (últimos 10 dígitos). */
+function inbox_admin_by_phone(string $from): ?array {
+    $tail = substr(preg_replace('/\D+/', '', $from), -10);
+    if ($tail === '') return null;
+    try {
+        $st = db()->prepare("SELECT * FROM users WHERE phone <> '' AND REPLACE(REPLACE(REPLACE(phone,' ',''),'-',''),'+','') LIKE ?");
+        $st->execute(['%' . $tail]);
+        return $st->fetch() ?: null;
+    } catch (Throwable $e) { return null; }
+}
+
+/**
+ * Conversación por WhatsApp con un ADMINISTRADOR del equipo: Daniel actúa como
+ * asistente interno (con herramientas de CRM/pipeline/conocimiento/campañas) y le
+ * responde directo. No lo trata como prospecto ni dispara notificaciones a admins.
+ */
+function inbox_handle_admin(array $admin, string $from, string $body, string $externalId = ''): array {
+    require_once __DIR__ . '/chat_engine.php';
+    $pdo  = db();
+    $tail = substr(preg_replace('/\D+/', '', $from), -10);
+    // Reconstruir el hilo reciente con este admin (sus mensajes + las respuestas de Daniel).
+    $hist = $pdo->prepare("SELECT body, reply_draft FROM inbox_messages WHERE channel='whatsapp' AND lead_id IS NULL AND from_addr LIKE ? ORDER BY id DESC LIMIT 8");
+    $hist->execute(['%' . $tail]);
+    $messages = [];
+    foreach (array_reverse($hist->fetchAll()) as $h) {
+        if (trim((string)$h['body']) !== '')        $messages[] = ['role' => 'user', 'content' => (string)$h['body']];
+        if (trim((string)$h['reply_draft']) !== '') $messages[] = ['role' => 'assistant', 'content' => (string)$h['reply_draft']];
+    }
+    $messages[] = ['role' => 'user', 'content' => $body];
+
+    $r = chat_admin_reply((string)($admin['name'] ?? ''), $messages);
+    $reply = (!empty($r['ok']) && trim((string)$r['text']) !== '') ? $r['text'] : 'Disculpá, tuve un problema procesando eso. ¿Lo reintentamos?';
+    whapi_send_text($from, $reply);
+
+    $pdo->prepare("INSERT INTO inbox_messages (lead_id, channel, external_id, from_addr, subject, body, reply_draft, has_objection, status)
+                   VALUES (NULL, 'whatsapp', ?, ?, 'Chat admin', ?, ?, 0, 'respondido')")
+        ->execute([($externalId ?: null), $from, $body, $reply]);
+    return ['ok' => true, 'admin_chat' => true, 'reply' => $reply];
+}
+
 /**
  * Ingesta de un mensaje entrante (desde webhook de WhatsApp o IMAP).
  * Identifica el lead, registra la actividad y prepara la respuesta sugerida.
@@ -101,6 +141,12 @@ function inbox_ingest(string $channel, string $from, string $body, string $exter
         $st = $pdo->prepare("SELECT id FROM inbox_messages WHERE channel = ? AND external_id = ? LIMIT 1");
         $st->execute([$channel, $externalId]);
         if ($st->fetch()) return ['ok' => true, 'dup' => true];
+    }
+
+    // Si el remitente es un ADMINISTRADOR del equipo → conversa como asistente interno (no prospecto).
+    if ($channel === 'whatsapp') {
+        $admin = inbox_admin_by_phone($from);
+        if ($admin) return inbox_handle_admin($admin, $from, $body, $externalId);
     }
 
     $lead    = inbox_find_lead($channel, $from);
