@@ -75,6 +75,34 @@ switch ($action) {
     case 'report':
         json_out(['ok' => true, 'report' => campaign_report()]);
 
+    case 'report_full': {
+        $pdo = db();
+        $camps = campaign_report();
+        foreach ($camps as &$c) {
+            $cid = (int)$c['id'];
+            $c['responses'] = (int)$pdo->query("SELECT COUNT(DISTINCT a.lead_id) FROM lead_activities a JOIN campaign_leads cl ON cl.lead_id = a.lead_id AND cl.campaign_id = $cid WHERE a.direction = 'in'")->fetchColumn();
+            $c['reply_rate'] = ((int)$c['contacted']) > 0 ? round($c['responses'] / $c['contacted'] * 100, 1) : 0.0;
+        }
+        unset($c);
+        $funnel    = $pdo->query("SELECT stage, COUNT(*) c FROM leads GROUP BY stage")->fetchAll(PDO::FETCH_KEY_PAIR);
+        $contacted = (int)$pdo->query("SELECT COUNT(*) FROM campaign_leads WHERE status = 'contactado'")->fetchColumn();
+        $responses = (int)$pdo->query("SELECT COUNT(DISTINCT a.lead_id) FROM lead_activities a JOIN campaign_leads cl ON cl.lead_id = a.lead_id WHERE a.direction = 'in'")->fetchColumn();
+        $recent = $pdo->query("SELECT a.direction, a.type, a.subject, a.body, a.sent_at, CONCAT(l.first_name,' ',COALESCE(l.last_name,'')) nm, l.company FROM lead_activities a JOIN campaign_leads cl ON cl.lead_id = a.lead_id JOIN leads l ON l.id = a.lead_id ORDER BY a.id DESC LIMIT 12")->fetchAll();
+        json_out(['ok' => true,
+            'totals' => [
+                'campaigns'  => count($camps),
+                'contacted'  => $contacted,
+                'responses'  => $responses,
+                'reply_rate' => $contacted > 0 ? round($responses / $contacted * 100, 1) : 0.0,
+                'pending'    => (int)$pdo->query("SELECT COUNT(*) FROM agent_tasks WHERE status='sugerida' AND type='outreach'")->fetchColumn(),
+                'inbox'      => (int)$pdo->query("SELECT COUNT(*) FROM inbox_messages WHERE status='pendiente' AND lead_id IS NOT NULL")->fetchColumn(),
+            ],
+            'campaigns' => $camps,
+            'funnel'    => $funnel,
+            'recent'    => $recent,
+        ]);
+    }
+
     case 'sequences':
         json_out(['ok' => true, 'sequences' => agent_sequences()]);
 

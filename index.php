@@ -22,6 +22,7 @@ $pages = [
     'contenido' => 'Contenido',
     'agente'    => 'Agente Autónomo',
     'campanas'  => 'Campañas',
+    'reporte'   => 'Reporte',
     'secuencias'=> 'Secuencias',
     'aprendizaje'=> 'Aprendizaje',
     'perfil'    => 'Perfil del Agente',

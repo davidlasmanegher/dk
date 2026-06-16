@@ -12,6 +12,7 @@ $nav = [
     ['inbox',     'Bandeja',          'M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z'],
     ['agente',    'Agente',           'M13 10V3L4 14h7v7l9-11h-7z'],
     ['campanas',  'Campañas',         'M3 11l18-5v12L3 14v-3zM11.6 16.8a3 3 0 11-5.8-1.6'],
+    ['reporte',   'Reporte',          'M3 3v18h18M9 17V9m4 8v-5m4 5V7'],
     ['aprendizaje','Aprendizaje',     'M3 3v18h18M18.7 8l-5.1 5.2-2.8-2.7L7 14'],
     ['perfil',    'Perfil',           'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
     ['conocimiento','Conocimiento',   'M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 006.5 22H20V2H6.5A2.5 2.5 0 004 4.5v15z'],
